@@ -1,0 +1,34 @@
+<project>
+
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>ml.dmlc.mxnet</groupId>
+    <artifactId>mxnet-scala-parent</artifactId>
+    <version>0.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>mxnet-scala-native-parent</artifactId>
+  <name>MXNet Scala Package - Native Parent</name>
+  <packaging>pom</packaging>
+
+  <profiles>
+    <profile>
+      <id>osx-x86_64</id>
+      <properties>
+        <platform>osx-x86_64</platform>
+      </properties>
+      <modules>
+        <module>osx-x86_64</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>linux-x86_64</id>
+      <properties>
+        <platform>linux-x86_64</platform>
+      </properties>
+      <modules>
+        <module>linux-x86_64</module>
+      </modules>
+    </profile>
+  </profiles>
+</project>
