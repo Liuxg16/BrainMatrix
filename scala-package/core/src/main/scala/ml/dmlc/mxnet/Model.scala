@@ -1,11 +1,10 @@
 package ml.dmlc.mxnet
 
-import ml.dmlc.mxnet.Base.Shape
-import ml.dmlc.mxnet.io.NDArrayIter
-import ml.dmlc.mxnet.optimizer.SGD
+import java.nio.ByteBuffer
+
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.collection.mutable.{ListBuffer, ArrayBuffer}
+import scala.collection.mutable
 
 /**
  * Describe the model flow
@@ -14,6 +13,91 @@ import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 class Model
 object Model {
   private val logger = LoggerFactory.getLogger(classOf[Model])
+
+  /**
+   * Checkpoint the model data into file.
+   * @param prefix Prefix of model name.
+   * @param epoch The epoch number of the model.
+   * @param symbol The input symbol
+   * @param argParams Model parameter, dict of name to NDArray of net's weights.
+   * @param auxParams Model parameter, dict of name to NDArray of net's auxiliary states.
+   * @note
+   * - ``prefix-symbol.json`` will be saved for symbol.
+   * - ``prefix-epoch.params`` will be saved for parameters.
+   */
+  def saveCheckpoint(prefix: String, epoch: Int, symbol: Symbol,
+                     argParams: Map[String, NDArray], auxParams: Map[String, NDArray]): Unit = {
+    symbol.save(s"$prefix-symbol.json")
+    val saveDict = argParams.map { case (k, v) => s"arg:$k" -> v } ++
+      auxParams.map { case (k, v) => s"aux:$k" -> v }
+    val paramName = "%s-%04d.params".format(prefix, epoch)
+    NDArray.save(paramName, saveDict)
+    logger.info(s"Saved checkpoint to $paramName")
+  }
+
+  /**
+   * Load model checkpoint from file.
+   *
+   * @param prefix Prefix of model name.
+   * @param epoch Epoch number of model we would like to load.
+   *
+   * @return
+   * symbol : The symbol configuration of computation network.
+   * argParams : Model parameter, dict of name to NDArray of net's weights.
+   * auxParams : Model parameter, dict of name to NDArray of net's auxiliary states.
+   * @note
+   * - symbol will be loaded from ``prefix-symbol.json``.
+   * - parameters will be loaded from ``prefix-epoch.params``.
+   */
+  def loadCheckpoint(prefix: String, epoch: Int):
+    (Symbol, Map[String, NDArray], Map[String, NDArray]) = {
+    val symbol = Symbol.load(s"$prefix-symbol.json")
+    val saveDict = NDArray.load("%s-%04d.params".format(prefix, epoch))
+    val argParams = mutable.HashMap[String, NDArray]()
+    val auxParams = mutable.HashMap[String, NDArray]()
+    for ((k, v) <- saveDict._1 zip saveDict._2) {
+      val splitted = k.split(":", 2)
+      val tp = splitted(0)
+      val name = splitted(1)
+      if (tp == "arg") {
+        argParams(name) = v
+      } else if (tp == "aux") {
+        auxParams(name) = v
+      }
+    }
+    (symbol, argParams.toMap, auxParams.toMap)
+  }
+
+  // a helper class for serializing model
+  class SerializedModel private[mxnet] (
+    val symbol: String,
+    val argParams: Map[String, Array[Byte]],
+    val auxParams: Map[String, Array[Byte]]) extends Serializable
+
+  private[mxnet] def serialize(symbol: Symbol,
+                               argParams: Map[String, NDArray],
+                               auxParams: Map[String, NDArray]): Array[Byte] = {
+    val serializedModel = new SerializedModel(
+      symbol.toJson,
+      argParams.map { case (k, v) => (k, v.serialize()) },
+      auxParams.map { case (k, v) => (k, v.serialize()) }
+    )
+    Serializer.getSerializer.serialize(serializedModel).array()
+  }
+
+  private[mxnet] def deserialize(bytes: Array[Byte]):
+    (Symbol, Map[String, NDArray], Map[String, NDArray]) = {
+    val model = Serializer.getSerializer.deserialize[SerializedModel](ByteBuffer.wrap(bytes))
+    val symbol = Symbol.loadJson(model.symbol)
+    val argParams = model.argParams.map { case (k, v) =>
+      (k, NDArray.deserialize(v))
+    }
+    val auxParams = model.auxParams.map { case (k, v) =>
+      (k, NDArray.deserialize(v))
+    }
+    (symbol, argParams, auxParams)
+  }
+
   /**
    * Create kvstore
    * This function select and create a proper kvstore given the kvstore type
@@ -50,7 +134,7 @@ object Model {
    * @param kvStore KVStore
    * @return Option of created [[KVStore]] and whether or not update weight on it
    */
-  private def createKVStore(kvStore: KVStore): (Option[KVStore], Boolean) = {
+  private[mxnet] def createKVStore(kvStore: KVStore): (Option[KVStore], Boolean) = {
     (Option(kvStore), kvStore != null && !kvStore.`type`.contains("local_allreduce"))
   }
 
@@ -187,22 +271,21 @@ object Model {
       trainData.reset()
       while (!epochDone) {
         var doReset = true
-        // TODO: make DataIter implement Iterator
-        var dataBatch = trainData.next()
-        while (doReset && dataBatch != null) {
+        while (doReset && trainData.hasNext) {
+          val dataBatch = trainData.next()
           executorManager.loadDataBatch(dataBatch)
           monitor.foreach(_.tic())
           executorManager.forward(isTrain = true)
           executorManager.backward()
           if (updateOnKVStore) {
             updateParamsOnKVStore(executorManager.paramArrays,
-                                  executorManager.gradArrays,
-                                  kvStore)
+              executorManager.gradArrays,
+              kvStore)
           } else {
             updateParams(executorManager.paramArrays,
-                         executorManager.gradArrays,
-                         updaterLocal, ctx.length,
-                         kvStore)
+              executorManager.gradArrays,
+              updaterLocal, ctx.length,
+              kvStore)
           }
           monitor.foreach(_.tocPrint())
           // evaluate at end, so out_cpu_array can lazy copy
@@ -215,7 +298,7 @@ object Model {
           if (epochSize != -1 && nBatch >= epochSize) {
             doReset = false
           }
-          dataBatch = trainData.next()
+          dataBatch.dispose()
         }
         if (doReset) {
           trainData.reset()
@@ -234,12 +317,12 @@ object Model {
         evalMetric.reset()
         evalDataIter.reset()
         // TODO: make DataIter implement Iterator
-        var evalBatch = evalDataIter.next()
-        while (evalBatch != null) {
+        while (evalDataIter.hasNext) {
+          val evalBatch = evalDataIter.next()
           executorManager.loadDataBatch(evalBatch)
           executorManager.forward(isTrain = false)
           evalMetric.update(evalBatch.label, executorManager.cpuOutputArrays)
-          evalBatch = evalDataIter.next()
+          evalBatch.dispose()
         }
 
         val (name, value) = evalMetric.get
@@ -251,6 +334,9 @@ object Model {
       }
       epochEndCallback.foreach(_.invoke(epoch, symbol, argParams, auxParams))
     }
+
+    updaterLocal.dispose()
+    executorManager.dispose()
   }
   // scalastyle:on parameterNum
 }
@@ -263,232 +349,4 @@ trait EpochEndCallback {
 
 trait BatchEndCallback {
   def invoke(epoch: Int, nBatch: Int, evalMetric: EvalMetric)
-}
-
-/**
- * Model class of MXNet for training and predicting feedforward nets.
- * This class is designed for a single-data single output supervised network.
- * @param symbol The symbol configuration of computation network.
- * @param ctx The device context of training and prediction.
- *            To use multi GPU training, pass in a list of gpu contexts.
- * @param numEpoch Training parameter, number of training epochs(epochs).
- * @param epochSize Number of batches in a epoch. In default, it is set to
- *                  ceil(num_train_examples / batch_size)
- * @param optimizer Training parameter, name or optimizer object for training.
- * @param initializer Training parameter, the initialization scheme used.
- * @param batchSize The batch size of training data.
- * @param argParams Model parameter, dict of name to NDArray of net's weights.
- * @param auxParams Model parameter, dict of name to NDArray of net's auxiliary states.
- * @param allowExtraParams Whether allow extra parameters that are not needed by symbol
- *                         to be passed by aux_params and arg_params.
- *                         If this is True, no error will be thrown when aux_params and arg_params
- *                         contain extra parameters than needed.
- * @param beginEpoch The beginning training epoch.
- */
-class FeedForward(val symbol: Symbol, val ctx: Array[Context] = Array(Context.cpu()),
-                  val numEpoch: Int = -1, val epochSize: Int = -1,
-                  val optimizer: Optimizer = new SGD(),
-                  val initializer: Initializer = new Uniform(0.01f),
-                  val batchSize: Int = 128,
-                  argParams: Map[String, NDArray] = null,
-                  auxParams: Map[String, NDArray] = null,
-                  allowExtraParams: Boolean = false,
-                  val beginEpoch: Int = 0) {
-  private val LOG: Logger = LoggerFactory.getLogger(classOf[FeedForward])
-  // check if symbol contain duplicated names.
-  Executor.checkArguments(symbol)
-
-  // rematch parameters to delete useless ones
-  private var _argParams =
-    if (allowExtraParams) {
-      if (argParams != null) {
-        val argNames = symbol.listArguments().toSet
-        argParams.filter { case (k, v) => argNames.contains(k) }
-      } else {
-        null
-      }
-    } else {
-      argParams
-    }
-  private var _auxParams =
-    if (allowExtraParams) {
-      if (auxParams != null) {
-        val auxNames = symbol.listAuxiliaryStates().toSet
-        auxParams.filter { case (k, v) => auxNames.contains(k) }
-      } else {
-        null
-      }
-    } else {
-      auxParams
-    }
-
-  // internal helper state
-  var predExec: Executor = null
-
-  // Initialize weight parameters and auxiliary states
-  private def initParams(inputShapes: Map[String, Shape], overwrite: Boolean = false)
-      : (Seq[String], Seq[String], Seq[String]) = {
-    val (argShapes, _, auxShapes) = symbol.inferShape(inputShapes)
-    val argNames = symbol.listArguments()
-    val inputNames = inputShapes.keys
-    val paramNames = argNames.toSet -- inputNames.toSet
-    val auxNames = symbol.listAuxiliaryStates()
-
-    val paramNameShapes = (argNames zip argShapes).filter { case (name, _) =>
-      paramNames.contains(name)
-    }
-    val argParams = paramNameShapes.map { case (name, shape) =>
-      (name, NDArray.zeros(shape))
-    }.toMap
-    val auxParams = (auxNames zip auxShapes).map { case (name, shape) =>
-      (name, NDArray.zeros(shape))
-    }.toMap
-
-    for ((k, v) <- argParams) {
-      if (_argParams != null && _argParams.contains(k) && (!overwrite)) {
-        argParams(k).set(_argParams(k))
-      } else {
-        initializer(k, v)
-      }
-    }
-
-    for ((k, v) <- auxParams) {
-      if (_auxParams != null && _auxParams.contains(k) && (!overwrite)) {
-        auxParams(k).set(_auxParams(k))
-      } else {
-        initializer(k, v)
-      }
-    }
-
-    _argParams = argParams
-    _auxParams = auxParams
-    (argNames, paramNames.toSeq, auxNames)
-  }
-
-  // Initialize the predictor module for running prediction.
-  private def initPredictor(inputShapes: Map[String, Shape]): Unit = {
-    if (this.predExec == null) {
-      val predExec = symbol.simpleBind(ctx(0), gradReq = "null", shapeDict = inputShapes)
-      predExec.copyParamsFrom(_argParams, _auxParams)
-      Executor.checkArguments(symbol)
-      this.predExec = predExec
-    }
-  }
-
-  // Initialize the iterator given input.
-  private def initIter(X: NDArray, y: NDArray, isTrain: Boolean): DataIter = {
-    require(y != null || !isTrain, "y must be specified")
-    val label = if (y == null) NDArray.zeros(X.shape(0)) else y
-    require(label.shape.length == 1, "Label must be 1D")
-    require(X.shape(0) == label.shape(0), "The numbers of data points and labels not equal")
-    if (isTrain) {
-      new NDArrayIter(X, label, batchSize, shuffle = isTrain, lastBatchHandle = "roll_over")
-    } else {
-      new NDArrayIter(X, label, batchSize, shuffle = false)
-    }
-  }
-
-  // Initialize the iterator given eval_data.
-  private def initEvalIter(evalData: (NDArray, NDArray)): DataIter = {
-    if (evalData == null) {
-      null
-    } else {
-      initIter(evalData._1, evalData._2, isTrain = true)
-    }
-  }
-
-  /**
-   * Run the prediction, always only use one device.
-   * @param data eval data
-   * @param numBatch the number of batch to run. Go though all batches if set -1
-   * @return The predicted value of the output.
-   *         Note the network may have multiple outputs, thus it return an array of [[NDArray]]
-   */
-  def predict(data: DataIter, numBatch: Int = -1): Array[NDArray] = {
-    data.reset()
-    val dataShapes = data.provideData
-    val dataNames = dataShapes.map(_._1).toArray
-    initPredictor(dataShapes)
-    val batchSize = data.batchSize
-    val dataArrays = dataNames.map(predExec.argDict(_))
-    val outputs = Array.fill(predExec.outputs.length)(ListBuffer.empty[NDArray])
-
-    var i = 0
-    var batch = data.next()
-    while (batch != null && i != numBatch) {
-      i += 1
-      Executor.loadData(batch, dataArrays)
-      predExec.forward(isTrain = false)
-      val padded = batch.pad
-      val realSize = batchSize - padded
-      for ((list, nd) <- outputs zip predExec.outputs) {
-        list += nd.slice(0, realSize).copy()
-      }
-      batch = data.next()
-    }
-    // TODO: we can use Symbol.concat to do the same thing. Can it be more efficient?
-    outputs.map(NDArray.concatenate(_))
-  }
-
-  /**
-   * Fit the model.
-   * @param trainData Training data
-   * @param evalData Evaluation data
-   * @param evalMetric The evaluation metric, cannot be null
-   * @param epochEndCallback A callback that is invoked at end of each epoch.
-   *                         This can be used to checkpoint model each epoch.
-   * @param batchEndCallback A callback that is invoked at end of each batch
-   *                         For print purpose
-   * @param kvStoreType A string kvstore type:
-   *                    'local' : multi-devices on a single machine, will automatically
-   *                              choose one from 'local_update_cpu', 'local_allreduce_cpu', and
-   *                              'local_allreduce_device'
-   *                    'dist_sync' : multi-machines with BSP
-   *                    'dist_async' : multi-machines with partical asynchronous
-   *                    In default uses 'local', often no need to change for single machine.
-   * @param logger When not specified, default logger will be used.
-   * @param workLoadList The list of work load for different devices, in the same order as ctx
-   */
-  def fit(trainData: DataIter, evalData: DataIter, evalMetric: EvalMetric = new Accuracy(),
-          kvStoreType: String = "local", epochEndCallback: EpochEndCallback = null,
-          batchEndCallback: BatchEndCallback = null, logger: Logger = LOG,
-          workLoadList: Seq[Float] = null): Unit = {
-    require(evalMetric != null, "evalMetric cannot be null")
-    val (argNames, paramNames, auxNames) =
-      initParams(trainData.provideData ++ trainData.provideLabel)
-
-    // create kvstore
-    val (kvStore, updateOnKVStore) = Model.createKVStore(kvStoreType, ctx.length, _argParams)
-
-    // init optimizer
-    val batchSizeMultiplier = kvStore.map { kv =>
-      if (kv.`type` == "dist_sync") {
-        kv.numWorkers
-      } else {
-        1
-      }
-    }
-    val batchSize = trainData.batchSize * batchSizeMultiplier.getOrElse(1)
-    this.optimizer.setArgNames(argNames)
-    this.optimizer.setRescaleGrad(1f / batchSize)
-
-    Model.trainMultiDevice(
-      symbol, ctx, argNames, paramNames, auxNames,
-      _argParams, _auxParams,
-      this.beginEpoch, this.numEpoch,
-      this.epochSize, this.optimizer,
-      kvStore, updateOnKVStore,
-      trainData = trainData, evalData = Option(evalData),
-      evalMetric = evalMetric,
-      epochEndCallback = Option(epochEndCallback),
-      batchEndCallback = Option(batchEndCallback),
-      logger = logger, workLoadList = workLoadList)
-  }
-}
-
-object FeedForward {
-  // Check if name is a data argument.
-  private def isDataArg(name: String): Boolean = {
-    name.endsWith("data") || name.endsWith("label")
-  }
 }

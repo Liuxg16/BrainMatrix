@@ -66,7 +66,6 @@ void NDArrayOp<xpu>::Forward(const OpContext &ctx,
   }
 
   CHECK(param_.pinfo->forward(ptrs.size(), ptrs.data(), tags.data(), param_.pinfo->p_forward));
-
   Engine::Get()->PushSync([ndcpy, ctx](RunContext rctx) {ctx.async_on_complete(); },
                           ndctx, ndvar, {});
 }
@@ -111,8 +110,6 @@ void NDArrayOp<xpu>::Backward(const OpContext &ctx,
   for (auto& i : ptrs) {
     ndcpy.push_back(*reinterpret_cast<NDArray*>(i));
   }
-
-
 
   CHECK(param_.pinfo->backward(ptrs.size(), ptrs.data(), tags.data(), param_.pinfo->p_backward));
   Engine::Get()->PushSync([ndcpy, ctx](RunContext rctx){ ctx.async_on_complete(); },

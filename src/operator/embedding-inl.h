@@ -36,7 +36,7 @@ struct EmbeddingParam: public dmlc::Parameter<EmbeddingParam> {
 };
 
 
-template<typename xpu>
+template<typename xpu, typename DType>
 class EmbeddingOp : public Operator {
  public:
   explicit EmbeddingOp(EmbeddingParam p) {
@@ -53,18 +53,20 @@ class EmbeddingOp : public Operator {
     CHECK_EQ(req[embedding::kOut], kWriteTo);
     CHECK_EQ(in_data.size(), 2);
     CHECK_EQ(out_data.size(), 1);
-    CHECK_EQ(in_data[embedding::kData].ndim(), 1)
-        << "Embedding layer expects its input to be one-dimensional. "
-        << in_data[embedding::kData].ndim()
-        << " dimensional input is given instead";
     CHECK_EQ(in_data[embedding::kWeight].ndim(), 2)
         << "Embedding layer expects its weight to be two-dimensional. "
         << in_data[embedding::kWeight].ndim()
         << " dimensional input is given instead";
+
+    const TShape& ishape = in_data[embedding::kData].shape_;
+    const TShape& oshape = out_data[embedding::kOut].shape_;
+
     Stream<xpu> *s = ctx.get_stream<xpu>();
-    Tensor<xpu, 1> data = in_data[embedding::kData].get<xpu, 1, real_t>(s);
-    Tensor<xpu, 2> wmat = in_data[embedding::kWeight].get<xpu, 2, real_t>(s);
-    Tensor<xpu, 2> out = out_data[embedding::kOut].get<xpu, 2, real_t>(s);
+    Tensor<xpu, 1, DType> data = in_data[embedding::kData].get_with_shape<xpu, 1, DType>(
+         Shape1(ishape.ProdShape(0, ishape.ndim())), s);
+    Tensor<xpu, 2, DType> wmat = in_data[embedding::kWeight].get<xpu, 2, DType>(s);
+    Tensor<xpu, 2, DType> out = out_data[embedding::kOut].get_with_shape<xpu, 2, DType>(
+         Shape2(oshape.ProdShape(0, oshape.ndim()-1), oshape[oshape.ndim()-1]), s);
     out = take(data, wmat);
   }
 
@@ -82,11 +84,24 @@ class EmbeddingOp : public Operator {
     CHECK_EQ(in_grad.size(), 2);
     CHECK_EQ(req[embedding::kData], kNullOp)
       << "Embedding layer doesn't support calculate data gradient";
+
+    const TShape& ishape = in_data[embedding::kData].shape_;
+    const TShape& oshape = out_grad[embedding::kOut].shape_;
+
     Stream<xpu> *s = ctx.get_stream<xpu>();
-    Tensor<xpu, 1> data = in_data[embedding::kData].get<xpu, 1, real_t>(s);
-    Tensor<xpu, 2> grad_out = out_grad[embedding::kOut].get<xpu, 2, real_t>(s);
-    Tensor<xpu, 2> grad_in = in_grad[embedding::kWeight].get<xpu, 2, real_t>(s);
-    grad_in = take_grad(data, grad_out, param_.input_dim);
+    Tensor<xpu, 1, DType> data = in_data[embedding::kData].get_with_shape<xpu, 1, DType>(
+         Shape1(ishape.ProdShape(0, ishape.ndim())), s);
+    Tensor<xpu, 2, DType> grad_out = out_grad[embedding::kOut].get_with_shape<xpu, 2, DType>(
+         Shape2(oshape.ProdShape(0, oshape.ndim()-1), oshape[oshape.ndim()-1]), s);
+    Tensor<xpu, 2, DType> grad_in = in_grad[embedding::kWeight].get<xpu, 2, DType>(s);
+    if (req[embedding::kWeight] == kWriteTo) {
+      grad_in = scalar<DType>(0.0f);
+      AddTakeGrad(grad_in, data, grad_out);
+    } else if (req[embedding::kWeight] == kAddTo) {
+      AddTakeGrad(grad_in, data, grad_out);
+    } else {
+      LOG(FATAL) << "wrong req";
+    }
   }
 
  private:
@@ -94,7 +109,7 @@ class EmbeddingOp : public Operator {
 };  // class EmbeddingOp
 
 template<typename xpu>
-Operator* CreateOp(EmbeddingParam param);
+Operator* CreateOp(EmbeddingParam param, int dtype);
 
 #if DMLC_USE_CXX11
 class EmbeddingProp : public OperatorProperty {
@@ -120,7 +135,34 @@ class EmbeddingProp : public OperatorProperty {
     SHAPE_ASSIGN_CHECK(*in_shape, embedding::kWeight, Shape2(param_.input_dim,
                                                           param_.output_dim));
     out_shape->clear();
-    out_shape->push_back(Shape2(dshape[0], param_.output_dim));
+
+    TShape oshape(dshape.ndim()+1);
+    for (size_t i = 0; i < dshape.ndim(); ++i) {
+      oshape[i] = dshape[i];
+    }
+    oshape[dshape.ndim()] = param_.output_dim;
+
+    out_shape->push_back(oshape);
+    return true;
+  }
+
+  bool InferType(std::vector<int> *in_type,
+                 std::vector<int> *out_type,
+                 std::vector<int> *aux_type) const override {
+    CHECK_GE(in_type->size(), 1);
+    int dtype = (*in_type)[0];
+    CHECK_NE(dtype, -1) << "First input must have specified type";
+    for (index_t i = 0; i < in_type->size(); ++i) {
+      if ((*in_type)[i] == -1) {
+        (*in_type)[i] = dtype;
+      } else {
+        CHECK_EQ((*in_type)[i], dtype) << "This layer requires uniform type. "
+                                       << "Expected " << dtype << " v.s. given "
+                                       << (*in_type)[i] << " at " << ListArguments()[i];
+      }
+    }
+    out_type->clear();
+    out_type->push_back(dtype);
     return true;
   }
 
@@ -141,7 +183,13 @@ class EmbeddingProp : public OperatorProperty {
     return {out_grad[embedding::kOut], in_data[embedding::kData]};
   }
 
-  Operator* CreateOperator(Context ctx) const override;
+  Operator* CreateOperator(Context ctx) const override {
+    LOG(FATAL) << "Not Implemented.";
+    return NULL;
+  }
+
+  Operator* CreateOperatorEx(Context ctx, std::vector<TShape> *in_shape,
+                             std::vector<int> *in_type) const override;
 
  private:
   EmbeddingParam param_;

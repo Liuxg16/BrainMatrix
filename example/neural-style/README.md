@@ -22,5 +22,4 @@ It takes 30 secs for a Titan X to generate the above 600x400 image.
   [torch implementation](https://github.com/jcjohnson/neural-style). But we may
   change it dramatically in the near future.
 
-python run.py --content-image input/gugongtaobao.jpg --style-image input/starry_night.jpg
-
+* We will release multi-GPU version soon.

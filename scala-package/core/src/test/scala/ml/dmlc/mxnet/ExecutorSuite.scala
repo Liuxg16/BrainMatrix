@@ -5,7 +5,7 @@ import ml.dmlc.mxnet.CheckUtils._
 
 class ExecutorSuite extends FunSuite with BeforeAndAfterAll {
   test("bind") {
-    val shape = Vector(100, 30)
+    val shape = Shape(100, 30)
     val lhs = Symbol.Variable("lhs")
     val rhs = Symbol.Variable("rhs")
     val ret = lhs + rhs
@@ -39,5 +39,25 @@ class ExecutorSuite extends FunSuite with BeforeAndAfterAll {
     executor.backward(Array(outGrad))
     assert(reldiff(lhsGrad, lhsGrad2) < 1e-6)
     assert(reldiff(rhsGrad, rhsGrad2) < 1e-6)
+  }
+
+  test("reshape") {
+    val x = Symbol.Variable("x")
+    val y = Symbol.FullyConnected()(Map("data" -> x, "num_hidden" -> 4))
+
+    val exec = y.simpleBind(Context.cpu(), "write", shapeDict = Map("x" -> Shape(5, 4)))
+    exec.argArrays(0).set(1)
+    exec.argArrays(1).set(1)
+    exec.argArrays(2).set(0)
+
+    val newExec = exec.reshape(kwargs = Map("x" -> Shape(3, 4)))
+    newExec.forward(isTrain = false)
+    // test sub exec forward
+    assert(newExec.outputs(0).toArray.forall(_ == 4))
+    // test shared memory
+    assert(exec.outputs(0).toArray.take(3).forall(_ == 4))
+    // test base exec forward
+    exec.forward(isTrain = false)
+    assert(exec.outputs(0).toArray.forall(_ == 4))
   }
 }

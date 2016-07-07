@@ -40,7 +40,7 @@ class StaticGraph;
 class Symbol {
  public:
 
-//by liuxianggen
+  //by liuxianggen
   bool isAtomic() const;
   bool isVariable() const;
 
@@ -93,6 +93,13 @@ class Symbol {
   void Compose(const std::unordered_map<std::string, Symbol>& kwargs,
                const std::string& name);
   /*!
+   * \brief Get name from the symbol.
+   *  This only works for symbol with outputs from single operators.
+   *  For grouped sybmbol, an error will be raised.
+   * \param out the output value of the name.
+   */
+  bool GetName(std::string* out);
+  /*!
    * \brief set additional attributes of the symbol,
    *  This only works for symbol with outputs from single operators.
    *  For grouped sybmbol, an error will be raised.
@@ -109,6 +116,20 @@ class Symbol {
    * \return true if the attribute exists, false if the attribute do not exist.
    */
   bool GetAttr(const std::string& key, std::string* out);
+  /*!
+   * \brief Get attribute dictionary from the symbol and all children. Each
+   *  attribute name is pre-pended with the symbol name.
+   *  For grouped sybmbol, an error will be raised.
+   * \return a dictionary.
+   */
+  std::map<std::string, std::string> ListAttr();
+  /*!
+   * \brief Get attribute dictionary from the symbol.
+   *  This only works for symbol with outputs from single operators.
+   *  For grouped sybmbol, an error will be raised.
+   * \return a dictionary.
+   */
+  std::map<std::string, std::string> ListAttrShallow();
   /*!
    * \brief Apply the symbol as a function, compose with arguments
    * \param args positional arguments for the symbol
@@ -144,29 +165,34 @@ class Symbol {
    *     For unknown shapes, InferShape will try to fill in the correct Shape in in_shape
    *     For known shapes, InferShape will check shape consistency
    *
-   *     common practice: set the shape of data input, and usually weight's shape can be infered
+   *     common practice: set the shape of data input, and usually weight's shape can be inferred
    *
-   * \param out_shapes Use to store the infered shapes of outputs.
-   * \param aux_shapes Use to store the infered shapes of auxiliary states
+   * \param out_shapes Use to store the inferred shapes of outputs.
+   * \param aux_shapes Use to store the inferred shapes of auxiliary states
+   * \param partial_infer Return partially inferred results if true.
    * \return true if the shape inference is successful, false if there is not enough information.
    * \throws dmlc::Error if the known arg_shapes are inconsistent.
    */
   bool InferShape(std::vector<TShape> *arg_shapes,
                   std::vector<TShape> *out_shapes,
-                  std::vector<TShape> *aux_shapes) const;
+                  std::vector<TShape> *aux_shapes,
+                  bool partial_infer = false) const;
+
   /*!
    * \brief infer the shapes by providing shapes of known arguments.
    * \param known_arg_shapes map of argument name to shape of arguments with known shapes.
-   * \param arg_shapes used to store infered shapes of arguments.
-   * \param out_shapes used to store infered shapes of outputs.
-   * \param aux_shapes Use to store the infered shapes of auxiliary states
+   * \param arg_shapes used to store inferred shapes of arguments.
+   * \param out_shapes used to store inferred shapes of outputs.
+   * \param aux_shapes Use to store the inferred shapes of auxiliary states
+   * \param partial_infer Return partially inferred results if true.
    * \return true if the shape inference is successful, false if there is not enough information.
    * \throws dmlc::Error if the known arg_shapes are inconsistent.
    */
   bool InferShape(const std::unordered_map<std::string, TShape> &known_arg_shapes,
                   std::vector<TShape> *arg_shapes,
                   std::vector<TShape> *out_shapes,
-                  std::vector<TShape> *aux_shapes) const;
+                  std::vector<TShape> *aux_shapes,
+                  bool partial_infer = false) const;
 
   /*!
    * \brief infer the types of outputs and unknown input arguments
@@ -176,10 +202,10 @@ class Symbol {
    *     For unknown types, Infertype will try to fill in the correct type in in_type
    *     For known types, Infertype will check type consistency
    *
-   *     common practice: set the type of data input, and usually weight's type can be infered
+   *     common practice: set the type of data input, and usually weight's type can be inferred
    *
-   * \param out_types Use to store the infered types of outputs.
-   * \param aux_types Use to store the infered types of auxiliary states
+   * \param out_types Use to store the inferred types of outputs.
+   * \param aux_types Use to store the inferred types of auxiliary states
    * \return true if the type inference is successful, false if there is not enough information.
    * \throws dmlc::Error if the known arg_types are inconsistent.
    */
@@ -189,9 +215,9 @@ class Symbol {
   /*!
    * \brief infer the types by providing types of known arguments.
    * \param known_arg_types map of argument name to type of arguments with known types.
-   * \param arg_types used to store infered types of arguments.
-   * \param out_types used to store infered types of outputs.
-   * \param aux_types Use to store the infered types of auxiliary states
+   * \param arg_types used to store inferred types of arguments.
+   * \param out_types used to store inferred types of outputs.
+   * \param aux_types Use to store the inferred types of auxiliary states
    * \return true if the type inference is successful, false if there is not enough information.
    * \throws dmlc::Error if the known arg_types are inconsistent.
    */
@@ -199,15 +225,6 @@ class Symbol {
                   std::vector<int> *arg_types,
                   std::vector<int> *out_types,
                   std::vector<int> *aux_types) const;
-
-  /*!
-    * \brief Convert symbol into internal static graph
-    *
-    * \param out_graph the pointer holder of the output graph
-    */
-   void ToStaticGraph(StaticGraph *out_graph) const;
-
-
   /*!
    * \brief interface for json serialization.
    * \param writer the JSON writer write json.
@@ -240,8 +257,7 @@ class Symbol {
    * \return the grouped symbol
    */
 
-
-  //by lxg
+//by liuxiangge
   static void PrintVector(const std::vector<uint32_t> &nums);
 
   static Symbol CreateGroup(const std::vector<Symbol> &symbols);
@@ -252,9 +268,11 @@ class Symbol {
    */
   static Symbol CreateVariable(const std::string &name);
 
+  
+
 
  protected:
-  // Decalre node, internal data structure.
+  // Declare node, internal data structure.
   struct Node;
   /*! \brief an entry that represents output data from a node */
   struct DataEntry {
@@ -280,6 +298,7 @@ class Symbol {
 
 //by liuxianggen
   inline bool is_variable() const;
+
   /*!
    * \brief Visit all the nodes in left-to-right depth first order.
    *
@@ -297,12 +316,12 @@ class Symbol {
    * \return maximum number of duplication factor
    */
   int FindDuplicateArgs(std::unordered_map<std::string, int> *out) const;
-//  /*!
-//   * \brief Convert symbol into internal static graph
-//   *
-//   * \param out_graph the pointer holder of the output graph
-//   */
-//  void ToStaticGraph(StaticGraph *out_graph) const;
+  /*!
+   * \brief Convert symbol into internal static graph
+   *
+   * \param out_graph the pointer holder of the output graph
+   */
+  void ToStaticGraph(StaticGraph *out_graph) const;
   /*!
    * \brief create equivalence of symbol from static graphs.
    *  This operation will change the content of current symbol.
@@ -366,6 +385,7 @@ class Executor {
    * \param arg_grad_store NDArray that is used to store the gradient output of the input arguments.
    * \param grad_req_type requirment type of gradient saving. Can only be in {kNullOp, kAddTo, kWriteTo}.
    * \param aux_states NDArray that is used as internal state in op
+   * \param shared_exec input executor to share memory with.
    * \return a new executor.
    */
   static Executor *Bind(Symbol symbol,
@@ -374,15 +394,19 @@ class Executor {
                         const std::vector<NDArray> &in_args,
                         const std::vector<NDArray> &arg_grad_store,
                         const std::vector<OpReqType> &grad_req_type,
-                        const std::vector<NDArray> &aux_states);
+                        const std::vector<NDArray> &aux_states,
+                        Executor* shared_exec = NULL);
 
-  static Executor *Bind(StaticGraphHandle symbolPtr,
-                          const Context& default_ctx,
-                          const std::map<std::string, Context>& group2ctx,
-                          const std::vector<NDArray> &in_args,
-                          const std::vector<NDArray> &arg_grad_store,
-                          const std::vector<OpReqType> &grad_req_type,
-                          const std::vector<NDArray> &aux_states);
+//by liuxianggen
+  static Executor *Bind(StaticGraphHandle sg_handle,
+                           const Context& default_ctx,
+                           const std::map<std::string, Context>& group2ctx,
+                           const std::vector<NDArray> &in_args,
+                           const std::vector<NDArray> &arg_grad_store,
+                           const std::vector<OpReqType> &grad_req_type,
+                           const std::vector<NDArray> &aux_states,
+  						 Executor* shared_exec = NULL);
+
   /*!
    * \brief the prototype of user-defined monitor callback
    */

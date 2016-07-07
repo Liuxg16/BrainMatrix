@@ -29,30 +29,38 @@ class SGD(private val learningRate: Float = 0.01f, private val momentum: Float =
         this.learningRate
       }) * lrScale.getOrElse(index, 1f)
 
-    val wd =
-      if (specialized) {
-        if (this.weightSet.contains(index)) {
-          this.wd
-        } else {
-          0f
-        }
-      } else {
-        this.wd
-      }
-
+    val wd = getWd(index, this.wd)
     var resdGrad = grad * this.rescaleGrad
     if (clipGradient != 0f) {
+      // to get rid of memory leak
+      val oldResdGrad = resdGrad
       resdGrad = NDArray.clip(resdGrad, -clipGradient, clipGradient)
+      oldResdGrad.dispose()
     }
+
     if (state != null) {
       val mom = state.asInstanceOf[NDArray]
       mom *= momentum
-      mom += -lr * (resdGrad + wd * weight)
+      // adder = -lr * (resdGrad + wd * weight)
+      // we write in this way to get rid of memory leak
+      val adder = wd * weight
+      adder += resdGrad
+      adder *= (-lr)
+      mom += adder
       weight += mom
+      adder.dispose()
     } else {
       require(momentum == 0f)
-      weight += -lr * (resdGrad + this.wd * weight)
+      // adder = -lr * (resdGrad + this.wd * weight)
+      // we write in this way to get rid of memory leak
+      val adder = this.wd * weight
+      adder += resdGrad
+      adder *= (-lr)
+      weight += adder
+      adder.dispose()
     }
+
+    resdGrad.dispose()
   }
 
   // Create additional optimizer state such as momentum.
@@ -61,6 +69,13 @@ class SGD(private val learningRate: Float = 0.01f, private val momentum: Float =
       null
     } else {
       NDArray.zeros(weight.shape, weight.context)
+    }
+  }
+
+  // Dispose the state it created
+  override def disposeState(state: AnyRef): Unit = {
+    if (state != null) {
+      state.asInstanceOf[NDArray].dispose()
     }
   }
 }

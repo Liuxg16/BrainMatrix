@@ -1,6 +1,7 @@
 package ml.dmlc.mxnet
 
 import ml.dmlc.mxnet.Base._
+import org.slf4j.{LoggerFactory, Logger}
 
 /**
  * Key value store interface of MXNet for parameter synchronization.
@@ -8,7 +9,11 @@ import ml.dmlc.mxnet.Base._
  */
 object KVStore {
   /**
-   * Create a new KVStore.
+   * Create a new KVStore. <br />
+   * <b>
+   * WARNING: it is your responsibility to clear this object through dispose().
+   * NEVER rely on the GC strategy
+   * </b>
    *
    * @param name : {'local', 'dist'}
    *     The type of KVStore
@@ -23,8 +28,26 @@ object KVStore {
   }
 }
 
-class KVStore(private val handle: KVStoreHandle) {
+// scalastyle:off finalize
+class KVStore(private[mxnet] val handle: KVStoreHandle) {
+  private val logger: Logger = LoggerFactory.getLogger(classOf[KVStore])
   private var updaterFunc: MXKVStoreUpdater = null
+  private var disposed = false
+
+  override protected def finalize(): Unit = {
+    dispose()
+  }
+
+  /**
+   * Release the native memory.
+   * The object shall never be used after it is disposed.
+   */
+  def dispose(): Unit = {
+    if (!disposed) {
+      _LIB.mxKVStoreFree(handle)
+      disposed = true
+    }
+  }
 
   /**
    * Initialize a single or a sequence of key-value pairs into the store.
@@ -154,9 +177,11 @@ class KVStore(private val handle: KVStoreHandle) {
   def setOptimizer(optimizer: Optimizer): Unit = {
     val isWorker = new RefInt
     checkCall(_LIB.mxKVStoreIsWorkerNode(isWorker))
-    if ("dist" == `type` && isWorker.value != 0) {
+    if (`type`.contains("dist") && isWorker.value != 0) {
       val optSerialized = Serializer.getSerializer.serialize(optimizer)
-      sendCommandToServers(0, Serializer.encodeBase64String(optSerialized))
+      val cmd = Serializer.encodeBase64String(optSerialized)
+      logger.debug("Send optimizer to server: {}", cmd)
+      sendCommandToServers(0, cmd)
     } else {
       setUpdater(Optimizer.getUpdater(optimizer))
     }
@@ -202,3 +227,4 @@ class KVStore(private val handle: KVStoreHandle) {
     checkCall(_LIB.mxKVStoreSendCommmandToServers(handle, head, body))
   }
 }
+// scalastyle:off finalize

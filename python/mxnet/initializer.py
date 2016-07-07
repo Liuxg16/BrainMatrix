@@ -1,4 +1,5 @@
 # coding: utf-8
+# pylint: disable=too-many-branches
 """Initialization helper for mxnet"""
 from __future__ import absolute_import
 
@@ -29,6 +30,10 @@ class Initializer(object):
             raise TypeError('arr must be NDArray')
         if name.startswith('upsampling'):
             self._init_bilinear(name, arr)
+        elif name.startswith('stn_loc') and name.endswith('weight'):
+            self._init_zero(name, arr)
+        elif name.startswith('stn_loc') and name.endswith('bias'):
+            self._init_loc_bias(name, arr)
         elif name.endswith('bias'):
             self._init_bias(name, arr)
         elif name.endswith('gamma'):
@@ -40,6 +45,8 @@ class Initializer(object):
         elif name.endswith("moving_mean"):
             self._init_zero(name, arr)
         elif name.endswith("moving_var"):
+            self._init_one(name, arr)
+        elif name.endswith("moving_inv_var"):
             self._init_zero(name, arr)
         elif name.endswith("moving_avg"):
             self._init_zero(name, arr)
@@ -49,7 +56,7 @@ class Initializer(object):
     def _init_bilinear(self, _, arr):
         weight = np.zeros(np.prod(arr.shape), dtype='float32')
         shape = arr.shape
-        f = shape[3] / 2.
+        f = np.ceil(shape[3] / 2.)
         c = (2 * f - 1 - f % 2) / (2. * f)
         for i in range(np.prod(shape)):
             x = i % shape[3]
@@ -57,8 +64,16 @@ class Initializer(object):
             weight[i] = (1 - abs(x / f - c)) * (1 - abs(y / f - c))
         arr[:] = weight.reshape(shape)
 
+    def _init_loc_bias(self, _, arr):
+        shape = arr.shape
+        assert(shape[0] == 6)
+        arr[:] = np.array([1.0, 0, 0, 0, 1.0, 0])
+
     def _init_zero(self, _, arr):
         arr[:] = 0.0
+
+    def _init_one(self, _, arr):
+        arr[:] = 1.0
 
     def _init_bias(self, _, arr):
         arr[:] = 0.0
@@ -95,7 +110,7 @@ class Load(object):
         assert isinstance(param, dict)
         self.param = {}
         for name, arr in param.items():
-            if name.startswith('arg:'):
+            if name.startswith('arg:') or name.startswith('aux:'):
                 self.param[name[4:]] = arr
             else:
                 self.param[name] = arr
@@ -103,7 +118,7 @@ class Load(object):
         self.verbose = verbose
 
     def __call__(self, name, arr):
-        if self.param.has_key(name):
+        if name in self.param:
             assert arr.shape == self.param[name].shape, \
                 'Parameter %s cannot be initialized from loading. '%name + \
                 'Shape mismatch, target %s vs loaded %s'%(str(arr.shape),
@@ -113,7 +128,7 @@ class Load(object):
                 logging.info('Initialized %s by loading', name)
         else:
             assert self.default_init is not None, \
-                "Cannot Initialize %s. Not found in loaded param " + \
+                "Cannot Initialize %s. Not found in loaded param "%name + \
                 "and no default Initializer is provided."
             self.default_init(name, arr)
             if self.verbose:
@@ -230,8 +245,11 @@ class Xavier(Initializer):
 
     def _init_weight(self, _, arr):
         shape = arr.shape
-        fan_in, fan_out = np.prod(shape[1:]), shape[0]
-        factor = 1
+        hw_scale = 1.
+        if len(shape) > 2:
+            hw_scale = np.prod(shape[2:])
+        fan_in, fan_out = shape[1] * hw_scale, shape[0] * hw_scale
+        factor = 1.
         if self.factor_type == "avg":
             factor = (fan_in + fan_out) / 2.0
         elif self.factor_type == "in":

@@ -1,42 +1,47 @@
+/*!
+ *  Copyright (c) 2015 by Contributors
+ * \file jni_helper_func.h
+ * \brief Helper functions for operating JVM objects
+ */
 #include <jni.h>
 
-#ifndef MXNET_SCALA_JNI_HELPER_FUNC_H
-#define MXNET_SCALA_JNI_HELPER_FUNC_H
+#ifndef MXNET_JNICPP_MAIN_NATIVE_JNI_HELPER_FUNC_H_
+#define MXNET_JNICPP_MAIN_NATIVE_JNI_HELPER_FUNC_H_
 
-// Define an env closure
-// e.g. it can be used to implement java callback
-typedef struct {
-  JNIEnv *env;
-  jobject obj;
-} JNIClosure;
-
-jlong getLongField(JNIEnv *env, jobject obj) {
+jlong GetLongField(JNIEnv *env, jobject obj) {
   jclass refClass = env->FindClass("thu/brainmatrix/Base$RefLong");
   jfieldID refFid = env->GetFieldID(refClass, "value", "J");
-  return env->GetLongField(obj, refFid);
+  jlong ret = env->GetLongField(obj, refFid);
+  env->DeleteLocalRef(refClass);
+  return ret;
 }
 
-jint getIntField(JNIEnv *env, jobject obj) {
+jint GetIntField(JNIEnv *env, jobject obj) {
   jclass refClass = env->FindClass("thu/brainmatrix/Base$RefInt");
   jfieldID refFid = env->GetFieldID(refClass, "value", "I");
-  return env->GetIntField(obj, refFid);
+  jint ret = env->GetIntField(obj, refFid);
+  env->DeleteLocalRef(refClass);
+  return ret;
 }
 
-void setIntField(JNIEnv *env, jobject obj, jint value) {
+void SetIntField(JNIEnv *env, jobject obj, jint value) {
   jclass refClass = env->FindClass("thu/brainmatrix/Base$RefInt");
   jfieldID refFid = env->GetFieldID(refClass, "value", "I");
   env->SetIntField(obj, refFid, value);
+  env->DeleteLocalRef(refClass);
 }
 
-void setLongField(JNIEnv *env, jobject obj, jlong value) {
+void SetLongField(JNIEnv *env, jobject obj, jlong value) {
   jclass refClass = env->FindClass("thu/brainmatrix/Base$RefLong");
   jfieldID refFid = env->GetFieldID(refClass, "value", "J");
   env->SetLongField(obj, refFid, value);
+  env->DeleteLocalRef(refClass);
 }
 
-void setStringField(JNIEnv *env, jobject obj, const char *value) {
+void SetStringField(JNIEnv *env, jobject obj, const char *value) {
   jclass refClass = env->FindClass("thu/brainmatrix/Base$RefString");
   jfieldID refFid = env->GetFieldID(refClass, "value", "Ljava/lang/String;");
   env->SetObjectField(obj, refFid, env->NewStringUTF(value));
+  env->DeleteLocalRef(refClass);
 }
-#endif
+#endif  // MXNET_JNICPP_MAIN_NATIVE_JNI_HELPER_FUNC_H_

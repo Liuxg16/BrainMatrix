@@ -13,7 +13,7 @@
 #include <vector>
 #include <map>
 #include <utility>
-#include "./static_graph.h"
+//#include "./static_graph.h"
 #include "./graph_memory_allocator.h"
 
 namespace mxnet {
@@ -37,70 +37,82 @@ class GraphExecutor : public Executor {
     monitor_callback_ = callback;
   }
   // implement Executor::Bind, only call it once.
-  // implement Executor::Bind, only call it once.
-   inline void Init(StaticGraphHandle sg_handle,
+  inline void Init(Symbol symbol,
+                   const Context& default_ctx,
+                   const std::map<std::string, Context>& ctx_map,
+                   const std::vector<NDArray> &in_args,
+                   const std::vector<NDArray> &arg_grad_store,
+                   const std::vector<OpReqType> &grad_req_type,
+                   const std::vector<NDArray> &aux_states,
+                   Executor* shared_exec = nullptr) {
+    enable_inplace_allocation_ = dmlc::GetEnv("MXNET_EXEC_ENABLE_INPLACE", true);
+    prefer_bulk_execution_ = dmlc::GetEnv("MXNET_EXEC_PREFER_BULK_EXEC", true);
+    if (shared_exec != NULL) {
+      GraphExecutor* gexec = dynamic_cast<GraphExecutor*>(shared_exec);
+      CHECK(gexec) << "Input executor for sharing memory must have GraphExecutor type.";
+      shared_mem_ = gexec->shared_mem_;
+    } else {
+      shared_mem_ = std::make_shared<GraphStoragePool>();
+    }
+
+    CHECK_EQ(grad_req_type.size(), arg_grad_store.size());
+    bool need_backward = false;
+    for (auto req : grad_req_type) {
+      if (req != kNullOp) need_backward = true;
+    }
+    this->InitGraph(symbol, default_ctx, ctx_map,
+                    in_args, arg_grad_store, grad_req_type,
+                    need_backward);
+    this->InitDataEntryInfo(in_args, arg_grad_store, grad_req_type, aux_states);
+    this->InitOperators();
+    this->InitDataEntryMemory();
+    this->InitResources();
+    this->InitCachedOps();
+    this->InitOpSegs();
+  }
+// by liuxianggen
+  inline void Init(StaticGraphHandle sg_handle,
                     const Context& default_ctx,
                     const std::map<std::string, Context>& ctx_map,
                     const std::vector<NDArray> &in_args,
                     const std::vector<NDArray> &arg_grad_store,
                     const std::vector<OpReqType> &grad_req_type,
-                    const std::vector<NDArray> &aux_states) {
+                    const std::vector<NDArray> &aux_states,
+                    Executor* shared_exec = nullptr) {
      enable_inplace_allocation_ = dmlc::GetEnv("MXNET_EXEC_ENABLE_INPLACE", true);
+     prefer_bulk_execution_ = dmlc::GetEnv("MXNET_EXEC_PREFER_BULK_EXEC", true);
+     if (shared_exec != NULL) {
+       GraphExecutor* gexec = dynamic_cast<GraphExecutor*>(shared_exec);
+       CHECK(gexec) << "Input executor for sharing memory must have GraphExecutor type.";
+       shared_mem_ = gexec->shared_mem_;
+     } else {
+       shared_mem_ = std::make_shared<GraphStoragePool>();
+     }
 
      CHECK_EQ(grad_req_type.size(), arg_grad_store.size());
      bool need_backward = false;
      for (auto req : grad_req_type) {
        if (req != kNullOp) need_backward = true;
      }
-
-//     if(1) return ;//passed
      this->InitGraph(sg_handle, default_ctx, ctx_map,
                      in_args, arg_grad_store, grad_req_type,
                      need_backward);
-
      this->InitDataEntryInfo(in_args, arg_grad_store, grad_req_type, aux_states);
-
+     this->InitOperators();
      this->InitDataEntryMemory();
-
      this->InitResources();
-
-     this->InitOpNodes();
-
+     this->InitCachedOps();
+     this->InitOpSegs();
    }
-
-   inline void Init(Symbol symbol,
-                     const Context& default_ctx,
-                     const std::map<std::string, Context>& ctx_map,
-                     const std::vector<NDArray> &in_args,
-                     const std::vector<NDArray> &arg_grad_store,
-                     const std::vector<OpReqType> &grad_req_type,
-                     const std::vector<NDArray> &aux_states) {
-      enable_inplace_allocation_ = dmlc::GetEnv("MXNET_EXEC_ENABLE_INPLACE", true);
-
-      CHECK_EQ(grad_req_type.size(), arg_grad_store.size());
-      bool need_backward = false;
-      for (auto req : grad_req_type) {
-        if (req != kNullOp) need_backward = true;
-      }
-      this->InitGraph(symbol, default_ctx, ctx_map,
-                      in_args, arg_grad_store, grad_req_type,
-                      need_backward);
-      this->InitDataEntryInfo(in_args, arg_grad_store, grad_req_type, aux_states);
-      this->InitDataEntryMemory();
-      this->InitResources();
-      this->InitOpNodes();
-    }
-
-
 
  protected:
   // internal class of wrapping BackwardOp as ForwardOp
   class BackwardOpWrapper;
   // type of data entry
   enum DataEntryType {
-    // memory is binded by external NDArray in Bind
+    // memory is bound by external NDArray in Bind
     kBindByExternal,
-    // to be binded by external NDArray in Forward and Backward
+    // to be bound by external NDArray in Forward and Backward
     kTobeBindByExternal,
     // internal memory, allocated
     kInternalAllocated,
@@ -181,6 +193,17 @@ class GraphExecutor : public Executor {
       }
     }
   };
+  // a cached segment operator that executes a segment
+  struct CachedSegOpr {
+    // context of the operator
+    Context ctx;
+    // begin in topo order
+    size_t topo_begin;
+    // end in topo order
+    size_t topo_end;
+    // the cached operator
+    Engine::OprHandle opr;
+  };
   /*!
    * \brief Get input option of a node.
    *  This function is overriden for both Forward and Backward node.
@@ -216,23 +239,32 @@ class GraphExecutor : public Executor {
    * \return the execution entry.
    */
   inline OpExecEntry GetOpExecEntry(uint32_t node_id);
+  /*!
+   * \brief Try to create a cached operator to run segments between start and end
+   * \param topo_start beginning of segment
+   * \param topo_end end of segment
+   * \return the cached operator.
+   * The ret.opr can be nullptr if tyhe creation failed
+   */
+  CachedSegOpr CreateCachedSegOpr(size_t topo_start, size_t topo_end);
   // initialize the internal graph structure
-   void InitGraph(const StaticGraphHandle sg_handle,
-                  const Context& default_ctx,
-                  const std::map<std::string, Context>& ctx_map,
-                  const std::vector<NDArray> &in_args,
-                  const std::vector<NDArray> &arg_grad_store,
-                  const std::vector<OpReqType> &grad_req_type,
-                  bool need_backward);
+  void InitGraph(const Symbol &symbol,
+                 const Context& default_ctx,
+                 const std::map<std::string, Context>& ctx_map,
+                 const std::vector<NDArray> &in_args,
+                 const std::vector<NDArray> &arg_grad_store,
+                 const std::vector<OpReqType> &grad_req_type,
+                 bool need_backward);
 
-   // initialize the internal graph structure
-    void InitGraph(const Symbol &symbol,
-                   const Context& default_ctx,
-                   const std::map<std::string, Context>& ctx_map,
-                   const std::vector<NDArray> &in_args,
-                   const std::vector<NDArray> &arg_grad_store,
-                   const std::vector<OpReqType> &grad_req_type,
-                   bool need_backward);
+
+//by liuxianggen
+  void InitGraph(const StaticGraphHandle sg_handle,
+                              const Context& default_ctx,
+                              const std::map<std::string, Context>& ctx_map,
+                              const std::vector<NDArray> &in_args,
+                              const std::vector<NDArray> &arg_grad_store,
+                              const std::vector<OpReqType> &grad_req_type,
+                              bool need_backward);
 
 
   // initialize internal DataEntryInfo, reference counting
@@ -245,7 +277,11 @@ class GraphExecutor : public Executor {
   // initialize the internal resources for each op
   void InitResources();
   // initialize OpNode data structure
-  void InitOpNodes();
+  void InitOperators();
+  // initialize OpNode data structure
+  void InitCachedOps();
+  // initialize segments of code to run together as a group.
+  void InitOpSegs();
   // assign context to the graph, this will mutate the graph.
   void AssignContext(const Context default_ctx,
                      const std::map<std::string, Context>& ctx_map,
@@ -268,6 +304,8 @@ class GraphExecutor : public Executor {
   size_t total_allocated_temp_;
   // number of forward nodes in the graph
   size_t num_forward_nodes_;
+  // whether to enable bulk execution
+  bool prefer_bulk_execution_;
   // head gradient node in the graph, if there is backward pass
   std::vector<uint32_t> head_grad_nodes_;
   // mirror map of nodes, experimental feature, normally can be ignored.
@@ -278,8 +316,12 @@ class GraphExecutor : public Executor {
   std::vector<OpNode> op_nodes_;
   // head NDArrays
   std::vector<NDArray> heads_ndarray_;
+  // shared NDArrays
+  std::shared_ptr<GraphStoragePool> shared_mem_;
   // monitor call back
   std::function<void(const char*, void*)> monitor_callback_;
+  // cached segment operator
+  std::vector<CachedSegOpr> cached_seg_opr_;
 };  // class GraphExecutor
 }  // namespace mxnet
 #endif  // MXNET_SYMBOL_GRAPH_EXECUTOR_H_

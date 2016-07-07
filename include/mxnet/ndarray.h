@@ -228,12 +228,23 @@ class NDArray {
     NDArray ret = *this;
     CHECK(!is_none()) << "NDArray is not initialized";
     CHECK_GE(shape_[0], end) << "Slice end index out of range";
-    size_t length = 1;
-    for (index_t i = 1; i < shape_.ndim(); ++i) {
-      length *= shape_[i];
-    }
+    size_t length = shape_.ProdShape(1, shape_.ndim());
     ret.offset_ += begin * length;
     ret.shape_[0] = end - begin;
+    return ret;
+  }
+  /*!
+   * \brief Index a NDArray
+   * \param idx the index
+   * \return idx-th sub array NDArray
+   */
+  inline NDArray At(index_t idx) const {
+    NDArray ret = *this;
+    CHECK(!is_none()) << "NDArray is not initialized";
+    CHECK_GE(shape_[0], idx) << "index out of range";
+    size_t length = shape_.ProdShape(1, shape_.ndim());
+    ret.offset_ += idx * length;
+    ret.shape_ = TShape(shape_.data()+1, shape_.data()+shape_.ndim());
     return ret;
   }
   /*!
@@ -501,6 +512,28 @@ struct NDArrayFunctionReg
     };
     num_mutate_vars = 1; num_scalars = 1;
     this->add_argument("src", "real_t", "Source input to the function.");
+    return *this;
+  }
+  /*!
+  * \brief set the function body to a ternary NDArray function
+  *  this will also auto set the parameters correctly
+  * \param fternary function body to set
+  * \return ref to the registered entry, used to set properties
+  */
+  inline NDArrayFunctionReg &set_function(void(*fternary)(const NDArray &lhs,
+                                                          const NDArray &mhs,
+                                                          const NDArray &rhs,
+                                                                NDArray *out)) {
+    body = [fternary](NDArray **used_vars,
+      real_t *s, NDArray **mutate_vars,
+      int num_params, char **param_keys, char **param_vals) {
+      (*fternary)(*used_vars[0], *used_vars[1], *used_vars[2], mutate_vars[0]);
+    };
+    num_use_vars = 3; num_mutate_vars = 1;
+    type_mask = kNDArrayArgBeforeScalar | kAcceptEmptyMutateTarget;
+    this->add_argument("lhs", "NDArray", "Left operand to the function.");
+    this->add_argument("mhs", "NDArray", "Middle operand to the function.");
+    this->add_argument("rhs", "NDArray", "Right operand to the function.");
     return *this;
   }
   /*!

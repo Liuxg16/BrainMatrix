@@ -15,16 +15,6 @@ object Context {
     new Context("gpu", deviceId)
   }
 
-  def withScope[T](device: Context)(body: => T): T = {
-    val oldDefaultCtx = Context.defaultCtx
-    Context._defaultCtx = device
-    try {
-      body
-    } finally {
-      Context._defaultCtx = oldDefaultCtx
-    }
-  }
-
   implicit def ctx2Array(ctx: Context): Array[Context] = Array(ctx)
 }
 
@@ -34,11 +24,21 @@ object Context {
  * @param deviceTypeName {'cpu', 'gpu'} String representing the device type
  * @param deviceId (default=0) The device id of the device, needed for GPU
  */
-class Context(deviceTypeName: String, val deviceId: Int = 0) {
+class Context(deviceTypeName: String, val deviceId: Int = 0) extends Serializable {
   val deviceTypeid: Int = Context.devstr2type(deviceTypeName)
 
   def this(context: Context) = {
     this(context.deviceType, context.deviceId)
+  }
+
+  def withScope[T](body: => T): T = {
+    val oldDefaultCtx = Context.defaultCtx
+    Context._defaultCtx = this
+    try {
+      body
+    } finally {
+      Context._defaultCtx = oldDefaultCtx
+    }
   }
 
   /**

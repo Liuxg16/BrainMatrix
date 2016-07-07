@@ -46,7 +46,6 @@ std::shared_ptr<Engine> Engine::_GetSharedRef() {
 
 Engine* Engine::Get() {
   static Engine *inst = _GetSharedRef().get();
-
   return inst;
 }
 }  // namespace mxnet

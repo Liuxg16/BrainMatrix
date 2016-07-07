@@ -10,8 +10,15 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "./static_graph.h"
+#include "./graph_algorithm.h"
 
 namespace mxnet {
+
+namespace symbol_constants {
+const char *kShapeKey = "__shape__";
+const char *kNamespaceSeparator = "_";
+}  // namespace symbol_constants
+
 /*!
  * \brief Node is represents node of an operator in the symbolic graph.
  *
@@ -56,9 +63,41 @@ struct Symbol::Node {
       attr.reset(new std::map<std::string, std::string>(*(other.attr)));
     }
   }
+  ~Node() {
+    if (inputs.size() != 0 || backward_source_node.get() != nullptr) {
+      // explicit destructor to resolve problem of hell
+      // of stack overflow caused by recursive deletion chain
+      // run a DFS to explicit store to be deleted node on to_delete
+      std::vector<std::shared_ptr<Symbol::Node> > to_delete;
+      std::vector<Symbol::Node*> stack{this};
+
+      while (!stack.empty()) {
+        Node *n = stack.back();
+        stack.pop_back();
+
+        for (DataEntry& e : n->inputs) {
+          // if the ref is the only reference
+          // the target node need to be deleted
+          if (e.source.unique()) {
+            stack.push_back(e.source.get());
+            to_delete.emplace_back(std::move(e.source));
+          } else {
+            // otherwise, reset the shared_ptr won't trigger destructor.
+            e.source.reset();
+          }
+        }
+        if (n->backward_source_node.unique()) {
+          stack.push_back(n->backward_source_node.get());
+          to_delete.emplace_back(std::move(n->backward_source_node));
+        } else {
+          n->backward_source_node.reset();
+        }
+        n->inputs.clear();
+      }
+    }
+  }
   /*! \return Whether the symbol is atomic */
   inline bool is_atomic() const {
-//	printf("inputsize%d",(inputs.size()));
     return inputs.size() == 0 && op != nullptr;
   }
   /*! \return Whether it is unit variable */
@@ -76,44 +115,35 @@ inline bool Symbol::is_atomic() const {
   return heads_[0].source->is_atomic();
 }
 
-/*! \return whwther the symbol is atomic */
+//by liuxianggen
+/*! \return whwther the symbol is variable */
 inline bool Symbol::is_variable() const {
   return heads_[0].source->is_variable();
 }
 
+
 // implementation of template functions
 template<typename FVisit>
 inline void Symbol::DFSVisit(FVisit fvisit) const {
-  std::vector<std::pair<const std::shared_ptr<Node>*, uint32_t> > stack;
-  std::unordered_set<Node*> visited;
-
-  //by lxg
-//  printf(" @@ ");
-
-  // put the head into the graph
-  for (auto &head : heads_) {
-    Node* ptr = head.source.get();
-    if (visited.count(ptr) == 0) {
-      stack.push_back(std::make_pair(&head.source, 0));
-      visited.insert(ptr);
-    }
-    while (!stack.empty()) {
-//      printf(" && ");
-      std::pair<const std::shared_ptr<Node> *, uint32_t>& back = stack.back();
-      if (back.second == back.first->get()->inputs.size()) {
-        fvisit(*(back.first));
-        stack.pop_back();
-      } else {
-        std::vector<Symbol::DataEntry>& inputs = back.first->get()->inputs;
-        Symbol::DataEntry& input = inputs.at(back.second++);
-        Node* ptr = input.source.get();
-        if (visited.count(ptr) == 0) {
-          stack.push_back(std::make_pair(&input.source, 0));
-          visited.insert(ptr);
+  typedef const std::shared_ptr<Node>* GNode;
+  std::vector<GNode> head_nodes(heads_.size());
+  std::transform(heads_.begin(), heads_.end(), head_nodes.begin(),
+                 [](const DataEntry& e)->GNode {
+                   return &e.source;
+                 });
+  graph::PostOrderDFSVisit<GNode, Node*>(
+      head_nodes,
+      [fvisit](GNode n) { fvisit(*n); },  // FVisit
+      [](GNode n)->Node* { return n->get(); },  // HashFunc
+      [](GNode n)->uint32_t { return (*n)->inputs.size() +
+            static_cast<int>((*n)->is_backward()); },  // InDegree
+      [](GNode n, uint32_t index)->GNode {  // GetInput
+        if (index < (*n)->inputs.size()) {
+          return &(*n)->inputs.at(index).source;
+        } else {
+          return &(*n)->backward_source_node;
         }
-      }
-    }
-  }
+      });
 }
 
 // helper function to handle keyword argument mismatch
@@ -171,6 +201,7 @@ bool  Symbol::isVariable() const{
    return this->is_variable();
 
 }
+
 
 Symbol Symbol::Copy() const {
   std::unordered_map<Node*, std::shared_ptr<Node> > old_new;
@@ -327,10 +358,11 @@ inline std::string DefaultVarName(const std::string &op_name,
   }
 }
 
+
+
+
 void Symbol::Compose(const std::vector<Symbol>& args,
                      const std::string& name) {
-
-
   // CHECK_EQ(NumOutputs(), 1) << "Only composition of value function is supported currently";
   CHECK(!heads_[0].source->is_variable()) << "Variable cannot be composed";
   heads_[0].source->name = name;
@@ -342,8 +374,6 @@ void Symbol::Compose(const std::vector<Symbol>& args,
   // positional arguments requires all arguments for now.
   // TODO(bing) consider partial assignments
   if (this->is_atomic()) {
-//	  printf(" &&&A ");
-//	  printf(" $$ ");
     // atomic symbol do not have place holder for all the arguments
     std::vector<std::string> req_args = heads_[0].source->op->ListArguments();
     CHECK_LE(args.size(), req_args.size())
@@ -363,7 +393,6 @@ void Symbol::Compose(const std::vector<Symbol>& args,
       }
     }
   } else {
-//	printf(" &&&B ");
     // find all the place holders
     size_t arg_counter = 0;
     std::unordered_map<Node*, const DataEntry*> replace_map;
@@ -371,7 +400,6 @@ void Symbol::Compose(const std::vector<Symbol>& args,
     // replace map stores the existing replacement plan for arguments node
     this->DFSVisit([&arg_counter, &replace_map, &replace_plan, &args]
                    (const std::shared_ptr<Node> &node) {
-//    	printf(" AA ");
         // visit all the childs, find possible replacement
         for (size_t i = 0; i < node->inputs.size(); ++i) {
           DataEntry *e = &(node->inputs[i]);
@@ -401,8 +429,6 @@ void Symbol::Compose(const std::vector<Symbol>& args,
   }
 }
 
-
-// filled the heads_[0] information
 void Symbol::Compose(const std::unordered_map<std::string, Symbol>& kwargs,
                      const std::string& name) {
   // CHECK_EQ(NumOutputs(), 1) << "Only composition of value function is supported currently";
@@ -414,13 +440,12 @@ void Symbol::Compose(const std::unordered_map<std::string, Symbol>& kwargs,
   }
   size_t nmatched = 0;
   if (this->is_atomic()) {
-//	printf(" &&&C ");
     // atomic symbol do not have place holder for all the arguments
     std::vector<std::string> req_args = heads_[0].source->op->ListArguments();
     heads_[0].source->inputs.resize(req_args.size());
     for (size_t i = 0; i < req_args.size(); ++i) {
       auto iter = kwargs.find(req_args[i]);
-      if (iter != kwargs.end()) {//如果没有找到，iter会指向末尾迭代器
+      if (iter != kwargs.end()) {
         heads_[0].source->inputs[i] = iter->second.heads_[0];
         ++nmatched;
       } else {
@@ -438,7 +463,6 @@ void Symbol::Compose(const std::unordered_map<std::string, Symbol>& kwargs,
       heads_[0].source->inputs.clear();
     }
   } else {
-//	printf(" &&&D ");
     // find all the arguments positions
     std::unordered_map<std::string, int> dup_args;
     int max_dup = this->FindDuplicateArgs(&dup_args);
@@ -456,7 +480,6 @@ void Symbol::Compose(const std::unordered_map<std::string, Symbol>& kwargs,
     // replace map stores the existing replacement plan for arguments node
     this->DFSVisit([&nmatched, &visited, &kwargs, &replace_plan]
                    (const std::shared_ptr<Node> &node) {
-
         // visit all the childs, find possible replacement
         for (size_t i = 0; i < node->inputs.size(); ++i) {
           DataEntry *e = &(node->inputs[i]);
@@ -489,6 +512,16 @@ void Symbol::Compose(const std::unordered_map<std::string, Symbol>& kwargs,
   }
 }
 
+bool Symbol::GetName(std::string* out) {
+  Node* node = heads_[0].source.get();
+  for (const DataEntry& e : heads_) {
+    CHECK(node == e.source.get())
+        << "Symbol.GetName only works for non-grouped symbol";
+  }
+  *out = node->name;
+  return true;
+}
+
 void Symbol::SetAttr(const std::string &key, const std::string& value) {
   Node* node = heads_[0].source.get();
   for (const DataEntry& e : heads_) {
@@ -513,6 +546,40 @@ bool Symbol::GetAttr(const std::string& key, std::string* out) {
   *out = it->second;
   return true;
 }
+
+std::map<std::string, std::string> Symbol::ListAttr() {
+  std::map<std::string, std::string> ret;
+  this->DFSVisit([&ret](const std::shared_ptr<Node> &n) {
+      if (n->attr.get() == nullptr) return;
+      for (const auto &it : *(n->attr.get())) {
+        ret[n->name + symbol_constants::kNamespaceSeparator + it.first] = it.second;
+      }
+      // Also propagate attributes of each node to its auxiliary states.
+      // this is a hack to enable correct allocation of auxiliary state
+      // easily in multiple devices. This behavior should be helpful in current setting,
+      // but can be changed when needed in future.
+      if (n->op.get() != nullptr) {
+        for (const auto& aux : n->op->ListAuxiliaryStates()) {
+          for (const auto &it : *(n->attr.get())) {
+            ret[n->name + '_'  + aux +
+                symbol_constants::kNamespaceSeparator + it.first] = it.second;
+          }
+        }
+      }
+    });
+  return ret;
+}
+
+std::map<std::string, std::string> Symbol::ListAttrShallow() {
+  Node* node = heads_[0].source.get();
+  for (const DataEntry& e : heads_) {
+    CHECK(node == e.source.get())
+        << "Symbol.ListAttrShallow only works for non-grouped symbol";
+  }
+  if (node->attr.get() == nullptr) return std::map<std::string, std::string>();
+  return *node->attr.get();
+}
+
 
 Symbol Symbol::operator () (const std::vector<Symbol>& args,
                             const std::string& name) const {
@@ -576,29 +643,31 @@ Symbol Symbol::Grad(const std::vector<std::string>& wrt) const {
 
 bool Symbol::InferShape(std::vector<TShape> *arg_shapes,
                         std::vector<TShape> *out_shapes,
-                        std::vector<TShape> *aux_shapes) const {
+                        std::vector<TShape> *aux_shapes,
+                        bool partial_infer) const {
   StaticGraph g;
   this->ToStaticGraph(&g);
-  return g.InferShape(arg_shapes, out_shapes, aux_shapes);
+  return g.InferShape(arg_shapes, out_shapes, aux_shapes, partial_infer);
 }
 
 bool Symbol::InferShape(const std::unordered_map<std::string, TShape>& known_arg_shapes,
                         std::vector<TShape> *arg_shapes,
                         std::vector<TShape> *out_shapes,
-                        std::vector<TShape> *aux_shapes) const {
+                        std::vector<TShape> *aux_shapes,
+                        bool partial_infer) const {
   StaticGraph g;
   this->ToStaticGraph(&g);
   arg_shapes->clear();
   arg_shapes->resize(g.arg_nodes.size(), TShape());
   size_t nmatched = 0;
-  // printf("arg_nodes_length:%d",g.arg_nodes.size());
   for (size_t i = 0; i < g.arg_nodes.size(); ++i) {
     const std::string& name = g.nodes[g.arg_nodes[i]].name;
-    // std::cout<<name;
     auto it = known_arg_shapes.find(name);
     if (it != known_arg_shapes.end()) {
       arg_shapes->at(i) = it->second;
       ++nmatched;
+    } else if (g.nodes[g.arg_nodes[i]].is_variable()) {
+      arg_shapes->at(i) = g.nodes[g.arg_nodes[i]].get_attr(symbol_constants::kShapeKey, TShape());
     }
   }
   if (nmatched != known_arg_shapes.size()) {
@@ -607,7 +676,7 @@ bool Symbol::InferShape(const std::unordered_map<std::string, TShape>& known_arg
                    [](decltype(*known_arg_shapes.begin())& kv)->std::string { return kv.first; });
     KeywordArgumentMismatch("Symbol.InferShape", keys, ListArguments());
   }
-  return g.InferShape(arg_shapes, out_shapes, aux_shapes);
+  return g.InferShape(arg_shapes, out_shapes, aux_shapes, partial_infer);
 }
 
 bool Symbol::InferType(std::vector<int> *arg_types,
@@ -635,8 +704,6 @@ bool Symbol::InferType(const std::unordered_map<std::string, int>& known_arg_typ
       ++nmatched;
     }
   }
-
-
   if (nmatched != known_arg_types.size()) {
     std::vector<std::string> keys(known_arg_types.size());
     std::transform(known_arg_types.begin(), known_arg_types.end(), keys.begin(),
@@ -670,7 +737,6 @@ Symbol Symbol::Create(OperatorProperty *op)  {
   return s;
 }
 
-
 Symbol Symbol::CreateGroup(const std::vector<Symbol> &symbols) {
   Symbol ret;
   for (const auto &s : symbols) {
@@ -684,6 +750,7 @@ Symbol Symbol::CreateVariable(const std::string &name) {
   s.heads_.push_back(DataEntry(std::make_shared<Node>(nullptr, name), 0));
   return s;
 }
+
 
 //by liuxianggen
 void Symbol::PrintVector(const std::vector<uint32_t>  &nums){
@@ -705,15 +772,8 @@ void Symbol::ToStaticGraph(StaticGraph *out_graph) const {
 
   this->DFSVisit([&node_order, &node_index, &arg_nodes](const std::shared_ptr<Node> &n) {
       uint32_t nid = static_cast<uint32_t>(node_index.size());
-//      printf("**%s",n->name.c_str());
-
       node_index[n.get()] = nid;
       if (n->is_variable()) {
-//    	std::cout<<("variable:\n");
-//    	std::cout<<(n->name);
-//    	std::cout<<("\n backward:\n");
-//    	std::cout<<(n->backward_source_node);
-
         arg_nodes.push_back(nid);
       }
       node_order.push_back(n.get());
