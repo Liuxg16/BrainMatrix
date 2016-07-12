@@ -34,8 +34,7 @@ doc/latex
 doc/doc
 docs/web-data
 
-#dmlc
-config.mk
+
 
 *.pyc
 .Rhistory
@@ -62,7 +61,6 @@ __pycache__
 *.json
 *.d
 build
-data
 recommonmark
 bin
 deps

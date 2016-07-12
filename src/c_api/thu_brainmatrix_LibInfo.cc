@@ -1598,6 +1598,29 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaCreateOperatorPropert
 
 }
 
+/**
+ * @author liuxianggen
+ * @date 20160707
+ * @brief get the return of NumVisibleOutputs on op
+ * @param OperatorPropertyHandle
+ * @param MXUintRef
+ * @return the NumVisibleOutputs
+ * @note
+ * Class:     thu_brainmatrix_LibInfo
+ * Method:    mxScalaOpNumVisibleOutputs
+ * Signature: (JLthu/brainmatrix/Base/RefInt;)I
+ */
+JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaOpNumVisibleOutputs
+  (JNIEnv *env, jobject obj, jlong ophandle, jobject num){
+	  mx_uint res;
+	  int ret = MXScalaOpNumVisibleOutputs((OperatorPropertyHandle)ophandle,&res);
+	  jclass refIntClass = env->FindClass("thu/brainmatrix/Base$RefInt");
+	  jfieldID value = env->GetFieldID(refIntClass, "value", "I");
+	  env->SetIntField(num, value, (jint)res);
+	  return ret;
+}
+
+
 
 /*
  * by liuxianggen

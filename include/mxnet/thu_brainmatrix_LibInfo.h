@@ -9,14 +9,6 @@ extern "C" {
 #endif
 /*
  * Class:     thu_brainmatrix_LibInfo
- * Method:    nativeLibInit
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_nativeLibInit
-  (JNIEnv *, jobject);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
  * Method:    mxNDArrayFree
  * Signature: (J)I
  */
@@ -97,14 +89,6 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxFuncInvoke
 
 /*
  * Class:     thu_brainmatrix_LibInfo
- * Method:    mxFuncInvokeEx
- * Signature: (J[J[F[JI[[B[[B)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxFuncInvokeEx
-  (JNIEnv *, jobject, jlong, jlongArray, jfloatArray, jlongArray, jint, jobjectArray, jobjectArray);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
  * Method:    mxNDArrayGetShape
  * Signature: (JLthu/brainmatrix/Base/RefInt;Lscala/collection/mutable/ArrayBuffer;)I
  */
@@ -126,14 +110,6 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxNDArraySyncCopyToCPU
  */
 JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxNDArraySlice
   (JNIEnv *, jobject, jlong, jint, jint, jobject);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
- * Method:    mxNDArrayReshape
- * Signature: (JI[ILthu/brainmatrix/Base/RefLong;)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxNDArrayReshape
-  (JNIEnv *, jobject, jlong, jint, jintArray, jobject);
 
 /*
  * Class:     thu_brainmatrix_LibInfo
@@ -169,35 +145,19 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxNDArrayGetContext
 
 /*
  * Class:     thu_brainmatrix_LibInfo
- * Method:    mxNDArraySaveRawBytes
- * Signature: (JLscala/collection/mutable/ArrayBuffer;)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxNDArraySaveRawBytes
-  (JNIEnv *, jobject, jlong, jobject);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
- * Method:    mxNDArrayLoadFromRawBytes
- * Signature: ([BLthu/brainmatrix/Base/RefLong;)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxNDArrayLoadFromRawBytes
-  (JNIEnv *, jobject, jbyteArray, jobject);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
- * Method:    mxInitPSEnv
- * Signature: ([Ljava/lang/String;[Ljava/lang/String;)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxInitPSEnv
-  (JNIEnv *, jobject, jobjectArray, jobjectArray);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
  * Method:    mxKVStoreCreate
  * Signature: (Ljava/lang/String;Lthu/brainmatrix/Base/RefLong;)I
  */
 JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxKVStoreCreate
   (JNIEnv *, jobject, jstring, jobject);
+
+/*
+ * Class:     thu_brainmatrix_LibInfo
+ * Method:    mxKVStoreFree
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxKVStoreFree
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     thu_brainmatrix_LibInfo
@@ -278,14 +238,6 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxKVStoreGetGroupSize
  */
 JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxKVStoreGetRank
   (JNIEnv *, jobject, jlong, jobject);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
- * Method:    mxKVStoreFree
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxKVStoreFree
-  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     thu_brainmatrix_LibInfo
@@ -417,6 +369,22 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxExecutorSetMonitorCallback
 
 /*
  * Class:     thu_brainmatrix_LibInfo
+ * Method:    mxScalaSymbolIsAtomic
+ * Signature: (JLthu/brainmatrix/Base/RefInt;)I
+ */
+JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaSymbolIsAtomic
+  (JNIEnv *, jobject, jlong, jobject);
+
+/*
+ * Class:     thu_brainmatrix_LibInfo
+ * Method:    mxScalaSymbolIsVariable
+ * Signature: (JLthu/brainmatrix/Base/RefInt;)I
+ */
+JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaSymbolIsVariable
+  (JNIEnv *, jobject, jlong, jobject);
+
+/*
+ * Class:     thu_brainmatrix_LibInfo
  * Method:    mxSymbolListAtomicSymbolCreators
  * Signature: (Lscala/collection/mutable/ListBuffer;)I
  */
@@ -505,6 +473,14 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxSymbolListOutputs
 
 /*
  * Class:     thu_brainmatrix_LibInfo
+ * Method:    mxSymbolPrintVector
+ * Signature: (I[I)I
+ */
+JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxSymbolPrintVector
+  (JNIEnv *, jobject, jint, jintArray);
+
+/*
+ * Class:     thu_brainmatrix_LibInfo
  * Method:    mxSymbolCreateGroup
  * Signature: ([JLthu/brainmatrix/Base/RefLong;)I
  */
@@ -561,14 +537,6 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxSymbolSaveToJSON
 
 /*
  * Class:     thu_brainmatrix_LibInfo
- * Method:    mxSymbolCreateFromJSON
- * Signature: (Ljava/lang/String;Lthu/brainmatrix/Base/RefLong;)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxSymbolCreateFromJSON
-  (JNIEnv *, jobject, jstring, jobject);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
  * Method:    mxExecutorBindX
  * Signature: (JIII[Ljava/lang/String;[I[II[J[J[I[JLthu/brainmatrix/Base/RefLong;)I
  */
@@ -577,75 +545,11 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxExecutorBindX
 
 /*
  * Class:     thu_brainmatrix_LibInfo
- * Method:    mxExecutorBindEX
- * Signature: (JIII[Ljava/lang/String;[I[II[J[J[I[JJLthu/brainmatrix/Base/RefLong;)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxExecutorBindEX
-  (JNIEnv *, jobject, jlong, jint, jint, jint, jobjectArray, jintArray, jintArray, jint, jlongArray, jlongArray, jintArray, jlongArray, jlong, jobject);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
- * Method:    mxSymbolSaveToFile
- * Signature: (JLjava/lang/String;)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxSymbolSaveToFile
-  (JNIEnv *, jobject, jlong, jstring);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
- * Method:    mxSymbolCreateFromFile
- * Signature: (Ljava/lang/String;Lthu/brainmatrix/Base/RefLong;)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxSymbolCreateFromFile
-  (JNIEnv *, jobject, jstring, jobject);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
- * Method:    mxSymbolFree
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxSymbolFree
-  (JNIEnv *, jobject, jlong);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
  * Method:    mxRandomSeed
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxRandomSeed
   (JNIEnv *, jobject, jint);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
- * Method:    mxNotifyShutdown
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxNotifyShutdown
-  (JNIEnv *, jobject);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
- * Method:    mxScalaSymbolIsAtomic
- * Signature: (JLthu/brainmatrix/Base/RefInt;)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaSymbolIsAtomic
-  (JNIEnv *, jobject, jlong, jobject);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
- * Method:    mxScalaSymbolIsVariable
- * Signature: (JLthu/brainmatrix/Base/RefInt;)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaSymbolIsVariable
-  (JNIEnv *, jobject, jlong, jobject);
-
-/*
- * Class:     thu_brainmatrix_LibInfo
- * Method:    mxSymbolPrintVector
- * Signature: (I[I)I
- */
-JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxSymbolPrintVector
-  (JNIEnv *, jobject, jint, jintArray);
 
 /*
  * Class:     thu_brainmatrix_LibInfo
@@ -685,6 +589,14 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaOpPrintParam
  * Signature: (JLthu/brainmatrix/Base/RefLong;)I
  */
 JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaCreateOperatorProperty
+  (JNIEnv *, jobject, jlong, jobject);
+
+/*
+ * Class:     thu_brainmatrix_LibInfo
+ * Method:    mxScalaOpNumVisibleOutputs
+ * Signature: (JLthu/brainmatrix/Base/RefInt;)I
+ */
+JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaOpNumVisibleOutputs
   (JNIEnv *, jobject, jlong, jobject);
 
 /*

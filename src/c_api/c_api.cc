@@ -1685,6 +1685,26 @@ int MXScalaCreateOperatorProperty(AtomicSymbolCreator creator,OperatorPropertyHa
   API_END();
 }
 
+/**
+ * @author liuxianggen
+ * @date 20160707
+ * @brief get the return of NumVisibleOutputs on op
+ * @param OperatorPropertyHandle
+ * @param mx_uint
+ * @return the NumVisibleOutputs
+ * @note
+ */
+int MXScalaOpNumVisibleOutputs(OperatorPropertyHandle OpHandle,mx_uint *out){
+	 API_BEGIN();
+	 OperatorProperty *op = static_cast<OperatorProperty*>(OpHandle);
+
+	*out =  static_cast<mx_uint>(op->NumVisibleOutputs());
+
+	 API_END();
+}
+
+
+
 //2016-3-31
 // by liuxianggen
 int MXScalaSGInferShape(StaticGraphHandle handle,

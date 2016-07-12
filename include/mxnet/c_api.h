@@ -1394,7 +1394,16 @@ MXNET_DLL int MXScalaOpPrintParam(OperatorPropertyHandle OpHandle);
 //2016-3-9
 MXNET_DLL int MXScalaCreateOperatorProperty(AtomicSymbolCreator creator,OperatorPropertyHandle *out);
 
-
+/**
+ * @author liuxianggen
+ * @date 20160707
+ * @brief get the return of NumVisibleOutputs on op
+ * @param OperatorPropertyHandle
+ * @param mx_uint
+ * @return the NumVisibleOutputs
+ * @note
+ */
+MXNET_DLL int MXScalaOpNumVisibleOutputs(OperatorPropertyHandle OpHandle,mx_uint *out);
 
 /*!
  * 2016-3-13
