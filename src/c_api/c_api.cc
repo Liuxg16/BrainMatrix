@@ -800,9 +800,13 @@ int MXSymbolInferShape(SymbolHandle sym,
   MXAPIThreadLocalEntry *ret = MXAPIThreadLocalStore::Get();
   bool succ;
   API_BEGIN();
+
+
+
   if (keys == nullptr && num_args != 0) {
     ret->arg_shapes.clear();
     for (mx_uint i = 0; i < num_args; ++i) {
+
       ret->arg_shapes.push_back(TShape(arg_shape_data + arg_ind_ptr[i],
                                        arg_shape_data + arg_ind_ptr[i+1]));
     }
@@ -1744,24 +1748,26 @@ int MXScalaSGInferShape(StaticGraphHandle handle,
 
 //	printf(" D ");
 //	printf("num_args length:%d\n",num_args);
+//	printf("num_args length:%d\n",num_arg_nodes);
 	ret->arg_shapes.clear();
-//	ret->arg_shapes.resize(g.arg_nodes.size(), TShape());
 	ret->arg_shapes.resize(num_arg_nodes, TShape());
 	for (mx_uint i = 0; i < num_args; ++i) {
-//		 printf("shape_data:%d",i);
-//		 printf("shape_data:%d",keys_arr[i]);
+//		 printf("\nshape_data:%d",i);
+//		 printf("\nshape_data:%d",keys_arr[i]);
 //		 printf("shape_data:%d",arg_ind_ptr[i]);
 //		 printf("shape_data:%d",arg_ind_ptr[i+1]);
-//		 printf("shape_data:%d",*(arg_shape_data + arg_ind_ptr[i]));
-//		 printf("shape_data:%d",*(arg_shape_data + arg_ind_ptr[i+1]));
+//		 printf("\nshape_data:%d",*(arg_shape_data + arg_ind_ptr[i]));
+//		 printf("\nshape_data:%d",*(arg_shape_data + arg_ind_ptr[i+1]));
 		 ret->arg_shapes.at(keys_arr[i]) = (TShape(arg_shape_data + arg_ind_ptr[i],arg_shape_data + arg_ind_ptr[i+1]));
+//		ret->arg_shapes.push_back(TShape(arg_shape_data + arg_ind_ptr[i],arg_shape_data + arg_ind_ptr[i+1]));
+
 	}
 
 //	printf(" E ");
 //	for (auto nod : sg->nodes){
-//			printf("node input size:%d",nod.inputs.size());
+//			printf("\nnode input size:%d\n",nod.inputs.size());
 //			for(int ii=0;ii<nod.inputs.size();ii++){
-//				printf("inputs source id:%d",nod.inputs.at(ii).source_id);
+//				printf("inputs source id:%d\n",nod.inputs.at(ii).source_id);
 //			}
 //
 //	}
@@ -1773,7 +1779,7 @@ int MXScalaSGInferShape(StaticGraphHandle handle,
 //		if(nod.op!= nullptr){
 //			std::map<std::string, std::string> map_param = nod.op->GetParams();
 //			std::map<std::string, std::string>::iterator m_Iter;
-//			printf("key,value:\n");
+//			printf("\n key,value:\n");
 //			for(m_Iter = map_param.begin( ); m_Iter != map_param.end( ); m_Iter++){
 //				std::cout<<" "<< m_Iter->first;
 //				printf(" \n");
@@ -1786,6 +1792,8 @@ int MXScalaSGInferShape(StaticGraphHandle handle,
 	succ = sg->InferShape(&(ret->arg_shapes), &(ret->out_shapes), &(ret->aux_shapes));
 
 //	printf(" F ");
+
+
 	if (succ) {
 	MXAPIThreadLocalEntry::SetupShapeArrayReturn(
 	ret->arg_shapes, &(ret->arg_shape_ndim), &(ret->arg_shape_data));

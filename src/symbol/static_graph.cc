@@ -268,23 +268,37 @@ bool StaticGraph::InferShape(std::vector<TShape> *in_shape,
     }
     node_out_shapes[i].resize(nout);
   }
+
+//  printf(" ** ");
+
   CHECK(in_shape->size() == arg_nodes.size())
         << "Wrong number of inputs to infer shape";
   for (size_t i = 0; i < arg_nodes.size(); ++i) {
     node_out_shapes[arg_nodes[i]][0] = (*in_shape)[i];
   }
+
+//  printf(" ** ");
+
   if (!InferNodeShapes(this->TopoSort(),
                        &node_out_shapes,
                        &node_aux_shapes,
                        partial_infer)) return false;
+
+//  printf(" ** ");
+
   for (size_t i = 0; i < arg_nodes.size(); ++i) {
     (*in_shape)[i] = node_out_shapes[arg_nodes[i]][0];
   }
+
+//  printf(" ** ");
+
   out_shape->resize(heads.size());
   for (size_t i = 0; i < heads.size(); ++i) {
     const DataEntry &e = heads[i];
     (*out_shape)[i] = node_out_shapes[e.source_id][e.index];
   }
+
+//  printf(" ** ");
 
   // set back auxiliary nodes.
   aux_shape->clear();
@@ -292,6 +306,9 @@ bool StaticGraph::InferShape(std::vector<TShape> *in_shape,
   for (const auto& head : heads) {
     head_nodes.push_back(head.source_id);
   }
+
+//  printf(" ** ");
+
   std::vector<uint32_t> fwd_nodes = PostDFSOrder(head_nodes);
   uint32_t counter = 0;
   for (uint32_t nid : fwd_nodes) {
