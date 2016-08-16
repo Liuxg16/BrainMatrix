@@ -1499,4 +1499,15 @@ MXNET_DLL int MXScalaSymbolIsAtomic(SymbolHandle symbol,mx_uint *out);
 //lxg
 MXNET_DLL int MXScalaSymbolIsVariable(SymbolHandle symbol,mx_uint *out);
 
+
+//by liuxianggen
+//20160729
+MXNET_DLL int MXScalaSymbolCreateFromFile(const char *fname,StaticGraphHandle *out);
+
+//by liuxianggen
+//20160729
+MXNET_DLL int MXScalaSymbolSaveToFile(StaticGraphHandle sghandle, const char *fname);
+
+MXNET_DLL int MXStaticGraphFree(StaticGraphHandle sghandle);
+
 #endif  // MXNET_C_API_H_

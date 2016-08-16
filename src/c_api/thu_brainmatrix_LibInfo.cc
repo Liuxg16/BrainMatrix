@@ -1904,4 +1904,34 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxNDArraySetData
 }
 
 
+//by liuxianggen
+//20160729
+
+
+JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaSymbolSaveToFile
+  (JNIEnv *env, jobject obj, jlong symbolPtr, jstring jfname) {
+  const char *fname = env->GetStringUTFChars(jfname, 0);
+  int ret = MXScalaSymbolSaveToFile(reinterpret_cast<StaticGraphHandle>(symbolPtr), fname);
+  env->ReleaseStringUTFChars(jfname, fname);
+  return ret;
+}
+
+//by liuxianggen
+//20160729
+JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaSymbolCreateFromFile
+  (JNIEnv *env, jobject obj, jstring jfname, jobject jhandleRef) {
+  const char *fname = env->GetStringUTFChars(jfname, 0);
+  StaticGraphHandle out;
+  int ret = MXScalaSymbolCreateFromFile(fname, &out);
+  SetLongField(env, jhandleRef, reinterpret_cast<jlong>(out));
+  env->ReleaseStringUTFChars(jfname, fname);
+  return ret;
+}
+
+JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxStaticGraphFree
+  (JNIEnv * env, jobject obj, jlong ptr) {
+  return MXStaticGraphFree(reinterpret_cast<StaticGraphHandle>(ptr));
+}
+
+
 

@@ -1979,6 +1979,40 @@ int MXNDArraySetData(NDArrayHandle handle,int index,float source) {
 	 API_END();
 }
 
+//by liuxianggen
+//20160729
+int MXScalaSymbolCreateFromFile(const char *fname,StaticGraphHandle *out) {
+	StaticGraph *sg = new StaticGraph();
+  API_BEGIN();
+  std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname, "r"));
+  dmlc::istream is(fi.get());
+  dmlc::JSONReader reader(&is);
+  sg->Load(&reader);
+  // reset file pointer
+  is.set_stream(nullptr);
+  *out = sg;
+  API_END_HANDLE_ERROR(delete sg);
+}
 
 
+//by liuxianggen
+//20160729
+int MXScalaSymbolSaveToFile(StaticGraphHandle sghandle, const char *fname) {
+  StaticGraph *sg = static_cast<StaticGraph*>(sghandle);
 
+  API_BEGIN();
+  std::unique_ptr<dmlc::Stream> fo(dmlc::Stream::Create(fname, "w"));
+  dmlc::ostream os(fo.get());
+  dmlc::JSONWriter writer(&os);
+  sg->Save(&writer);
+  // reset file pointer, force flush
+  os.set_stream(nullptr);
+  API_END();
+}
+
+
+int MXStaticGraphFree(StaticGraphHandle sghandle) {
+  API_BEGIN();
+  delete static_cast<StaticGraph*>(sghandle);
+  API_END();
+}
