@@ -1,3 +1,4 @@
+import find_mxnet
 import mxnet as mx
 import numpy as np
 from sklearn.datasets import fetch_mldata

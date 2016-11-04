@@ -371,9 +371,65 @@ void ClipOp(const NDArray &src,
       break;
     }
     #endif
+
+
+
     default: LOG(FATAL) << MXNET_GPU_NOT_ENABLED_ERROR;
   }
 }
+
+void ClipOp_lxg(const NDArray &lhs,const NDArray &rhs,const real_t &num,
+            NDArray *out) {
+  if (out->is_none()) {
+    *out = NDArray(lhs.shape(), lhs.ctx(), true, lhs.dtype());
+  } else {
+    CHECK(out->ctx() == lhs.ctx()) << "target context mismatch";
+    CHECK(out->shape() == lhs.shape()) << "target shape mismatch";
+  }
+  printf("%f",num);
+  std::vector<Engine::VarHandle> const_vars;
+  const_vars.reserve(2);
+  const_vars.push_back(lhs.var());
+  const_vars.push_back(rhs.var());
+
+
+  NDArray ret = *out;
+  switch (out->ctx().dev_mask()) {
+    case cpu::kDevMask: {
+      Engine::Get()->PushSync([lhs,rhs, ret](RunContext ctx) {
+          std::vector<TBlob> source_tblob(2);
+	  source_tblob[0] = lhs.data();
+	  source_tblob[1] = rhs.data();
+
+          ret.CheckAndAlloc();
+          TBlob tmp = ret.data();
+          ndarray::ElementwiseSum<cpu>(source_tblob, &tmp, ctx);
+        }, out->ctx(), const_vars, {ret.var()});
+      break;
+    }
+#if MXNET_USE_CUDA
+    case gpu::kDevMask: {
+      Engine::Get()->PushSync([lhs,rhs, ret](RunContext ctx) {
+          std::vector<TBlob> source_tblob(2);
+	  source_tblob[0] = lhs.data();
+	  source_tblob[1] = rhs.data();
+          ret.CheckAndAlloc();
+          TBlob tmp = ret.data();
+          ndarray::ElementwiseSum<gpu>(source_tblob, &tmp, ctx);
+          // Wait GPU kernel to complete
+          ctx.get_stream<gpu>()->Wait();
+        }, out->ctx(), const_vars, {ret.var()});
+      break;
+    }
+#endif
+    default: LOG(FATAL) << MXNET_GPU_NOT_ENABLED_ERROR;
+  }
+}
+
+
+
+
+
 
 inline void CopyFromToSimple(const NDArray &from, NDArray *to) {
   CopyFromTo(from, to, 0);
@@ -774,6 +830,20 @@ MXNET_REGISTER_NDARRAY_FUN(clip)
 .add_argument("a_min", "real_t", "Minimum value")
 .add_argument("a_max", "real_t", "Maximum value");
 
+
+MXNET_REGISTER_NDARRAY_FUN(clip_lxg)
+.set_type_mask(kNDArrayArgBeforeScalar | kAcceptEmptyMutateTarget)
+.set_body([](NDArray **u, real_t *s, NDArray **out,
+             int num_params, char **param_keys, char **param_vals) {
+    ClipOp_lxg(*u[0], *u[1],s[0], out[0]);
+  })
+.set_num_use_vars(2)
+.set_num_scalars(1)
+.set_num_mutate_vars(1)
+.describe("lxg Clip ndarray elements to range (a_min, a_max)")
+.add_argument("src", "NDArray", "Source input")
+.add_argument("src", "NDArray", "Source input");
+
 void Imdecode(NDArray *ret, NDArray mean, size_t index,
               size_t x0, size_t y0, size_t x1, size_t y1, size_t n_channels,
               size_t size, char *str_img) {
@@ -846,6 +916,7 @@ void Imdecode(NDArray *ret, NDArray mean, size_t index,
   LOG(FATAL) << "Compile with OpenCV for image decoding.";
 #endif  // MXNET_USE_OPENCV
 }
+
 
 MXNET_REGISTER_NDARRAY_FUN(_broadcast)
 .set_type_mask(kAcceptEmptyMutateTarget | kNDArrayArgBeforeScalar)
