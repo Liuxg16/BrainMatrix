@@ -352,6 +352,7 @@ void ClipOp(const NDArray &src,
   NDArray ret = *out;
   std::vector<Engine::VarHandle> const_vars;
   if (src.var() != ret.var()) const_vars.push_back(src.var());
+
   switch (src.ctx().dev_mask()) {
     case cpu::kDevMask: {
       Engine::Get()->PushSync([src, a_min, a_max, ret](RunContext ctx) {
@@ -378,7 +379,7 @@ void ClipOp(const NDArray &src,
   }
 }
 
-void ClipOp_lxg(const NDArray &lhs,const NDArray &rhs,const real_t &num,
+void IntegateOp_lxg(const NDArray &lhs,const NDArray &rhs,const real_t &num,
             NDArray *out) {
   if (out->is_none()) {
     *out = NDArray(lhs.shape(), lhs.ctx(), true, lhs.dtype());
@@ -403,7 +404,7 @@ void ClipOp_lxg(const NDArray &lhs,const NDArray &rhs,const real_t &num,
 
           ret.CheckAndAlloc();
           TBlob tmp = ret.data();
-          ndarray::ElementwiseSum<cpu>(source_tblob, &tmp, ctx);
+          ndarray::Integer_lxg<cpu>(source_tblob, &tmp, ctx);
         }, out->ctx(), const_vars, {ret.var()});
       break;
     }
@@ -415,7 +416,7 @@ void ClipOp_lxg(const NDArray &lhs,const NDArray &rhs,const real_t &num,
 	  source_tblob[1] = rhs.data();
           ret.CheckAndAlloc();
           TBlob tmp = ret.data();
-          ndarray::ElementwiseSum<gpu>(source_tblob, &tmp, ctx);
+          ndarray::Integer_lxg<gpu>(source_tblob, &tmp, ctx);
           // Wait GPU kernel to complete
           ctx.get_stream<gpu>()->Wait();
         }, out->ctx(), const_vars, {ret.var()});
@@ -831,11 +832,11 @@ MXNET_REGISTER_NDARRAY_FUN(clip)
 .add_argument("a_max", "real_t", "Maximum value");
 
 
-MXNET_REGISTER_NDARRAY_FUN(clip_lxg)
+MXNET_REGISTER_NDARRAY_FUN(integate_lxg)
 .set_type_mask(kNDArrayArgBeforeScalar | kAcceptEmptyMutateTarget)
 .set_body([](NDArray **u, real_t *s, NDArray **out,
              int num_params, char **param_keys, char **param_vals) {
-    ClipOp_lxg(*u[0], *u[1],s[0], out[0]);
+    IntegateOp_lxg(*u[0], *u[1],s[0], out[0]);
   })
 .set_num_use_vars(2)
 .set_num_scalars(1)

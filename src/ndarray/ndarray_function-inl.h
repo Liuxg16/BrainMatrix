@@ -258,6 +258,46 @@ void ElementwiseSum<DEVICE>(const std::vector<TBlob> source,
   });
 }
 
+// edit by liuxianggen
+template<>
+void Integer_lxg<DEVICE>(const std::vector<TBlob> source,
+                            TBlob *dst,
+                            RunContext ctx) {
+  typedef DEVICE xpu;
+  using namespace mshadow;
+  using namespace mshadow::expr;
+  Stream<xpu> *s = ctx.get_stream<xpu>();
+  for (size_t i = 1; i < source.size(); ++i) {
+    CHECK_EQ(source[i].type_flag_, dst->type_flag_)
+      << "Only support input/output with the same data type";
+  }
+  MSHADOW_TYPE_SWITCH(dst->type_flag_, DType, {
+    Tensor<xpu, 2, DType> out = dst->FlatTo2D<xpu, DType>(s);
+    
+        Tensor<xpu, 2, DType> in_0 = source[0].FlatTo2D<xpu, DType>(s);
+        Tensor<xpu, 2, DType> in_1 = source[1].FlatTo2D<xpu, DType>(s);
+	
+	float data[9] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+        Tensor<cpu, 2> ts;
+	ts.dptr_ = data;
+	ts.shape_ = mshadow::Shape2(3, 2);
+	ts.stride_ = 1;
+	// now: ts[0][0] == 0, ts[0][1] == 1 , ts[1][0] == 3, ts[1][1] == 4
+	for (index_t i = 0; i < ts.size(0); ++i) {
+	  for (index_t j = 0; j < ts.size(1); ++j) {
+	    printf("ts[%u][%u]=%f\n", i, j, ts[i][j]);
+  		}
+	}
+	
+	in_0[0][0] = 10;
+
+	printf("in_0[0][0]=%f\n", in_0[0][0]);
+        out = in_0 + in_1;
+  });
+}
+
+
+
 template <>
 void EvalBroadcast<DEVICE>(TBlob const& src, TBlob* ret, int size, RunContext ctx) {
   typedef DEVICE xpu;

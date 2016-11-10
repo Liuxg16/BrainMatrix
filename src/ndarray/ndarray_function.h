@@ -136,6 +136,11 @@ void ElementwiseSum(const std::vector<TBlob> source,
                     TBlob *out,
                     RunContext ctx);
 
+template<typename Device>
+void Integer_lxg(const std::vector<TBlob> source,
+                    TBlob *out,
+                    RunContext ctx);
+
 // broadcasting
 template <typename Device>
 void EvalBroadcast(TBlob const& src, TBlob* ret, int size, RunContext ctx);
