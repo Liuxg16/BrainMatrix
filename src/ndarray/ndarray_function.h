@@ -140,6 +140,12 @@ template<typename Device>
 void Integer_lxg(const std::vector<TBlob> source,
                     TBlob *out,
                     RunContext ctx);
+template<typename Device>
+void SetSlice_lxg(TBlob *dst,
+                            TBlob *src,
+                            RunContext ctx);
+
+
 
 // broadcasting
 template <typename Device>

@@ -392,6 +392,20 @@ struct Tensor: public TRValue<Tensor<Device, dimension, DType>,
     return Tensor<Device, dimension, DType>(dptr_ + this->MemSize<1>() * begin,
                                             s, stride_, stream_);
   }
+
+  /*!
+   * author:liuxianggen 
+   * \brief set the slice 
+   */
+  MSHADOW_XINLINE void Slice_lxg(Tensor<Device, dimension, DType> dst,index_t idx) const {
+      Shape<dimension> s = this->shape_;
+      for(index_t x = 0; x < s[1]; ++x) {
+          
+          this[0][idx][x] = dst[0][x];
+          printf("%lf",dst[0][x]);
+      }
+  }
+
   /*!\brief implement the assignment of same type */
   inline Tensor<Device, dimension, DType> &
   operator=(const Tensor<Device, dimension, DType> &exp) {

@@ -428,6 +428,42 @@ void IntegateOp_lxg(const NDArray &lhs,const NDArray &rhs,const real_t &num,
 }
 
 
+// liuxianggen
+void SetSliceOp_lxg(const NDArray *dst,const NDArray &src,const real_t &num,NDArray *out) {
+  
+  std::vector<Engine::VarHandle> const_vars;
+  const_vars.reserve(1);
+  const_vars.push_back(src.var());
+  
+  if (out->is_none()) {
+    *out = NDArray();
+  } 
+
+  switch (dst->ctx().dev_mask()) {
+    case cpu::kDevMask: {
+      Engine::Get()->PushSync([src,dst](RunContext ctx) {
+          TBlob src_tblob = src.data();
+          TBlob dst_tblob = dst->data(); 
+          
+          ndarray::SetSlice_lxg<cpu>(&dst_tblob,&src_tblob,  ctx);
+        },src.ctx(), const_vars, {dst->var()});
+      break;
+    }
+#if MXNET_USE_CUDA
+    case gpu::kDevMask: {
+       Engine::Get()->PushSync([src,dst](RunContext ctx) {
+          TBlob src_tblob = src.data();
+          TBlob dst_tblob = dst->data(); 
+          
+          ndarray::SetSlice_lxg<gpu>( &dst_tblob, &src_tblob, ctx);
+        },src.ctx(), const_vars, {dst->var()});
+      break;
+    }
+#endif
+    default: LOG(FATAL) << MXNET_GPU_NOT_ENABLED_ERROR;
+  }
+}
+
 
 
 
@@ -831,7 +867,7 @@ MXNET_REGISTER_NDARRAY_FUN(clip)
 .add_argument("a_min", "real_t", "Minimum value")
 .add_argument("a_max", "real_t", "Maximum value");
 
-
+//liuxianggen
 MXNET_REGISTER_NDARRAY_FUN(integate_lxg)
 .set_type_mask(kNDArrayArgBeforeScalar | kAcceptEmptyMutateTarget)
 .set_body([](NDArray **u, real_t *s, NDArray **out,
@@ -842,8 +878,23 @@ MXNET_REGISTER_NDARRAY_FUN(integate_lxg)
 .set_num_scalars(1)
 .set_num_mutate_vars(1)
 .describe("lxg Clip ndarray elements to range (a_min, a_max)")
+.add_argument("lhs", "NDArray", "Source input")
+.add_argument("rhs", "NDArray", "Source input");
+
+//liuxianggen
+MXNET_REGISTER_NDARRAY_FUN(setslice_lxg)
+.set_type_mask(kNDArrayArgBeforeScalar | kAcceptEmptyMutateTarget)
+.set_body([](NDArray **u, real_t *s,NDArray **out, int num_params, char **param_keys, char **param_vals) {
+    SetSliceOp_lxg(u[0], *u[1],s[0],out[0]);
+  })
+.set_num_use_vars(2)
+.set_num_scalars(1)
+.set_num_mutate_vars(1)
+.describe("lxg Clip ndarray elements to range (a_min, a_max)")
 .add_argument("src", "NDArray", "Source input")
-.add_argument("src", "NDArray", "Source input");
+.add_argument("dts", "NDArray", "Source input");
+
+
 
 void Imdecode(NDArray *ret, NDArray mean, size_t index,
               size_t x0, size_t y0, size_t x1, size_t y1, size_t n_channels,
