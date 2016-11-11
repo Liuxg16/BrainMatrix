@@ -316,6 +316,7 @@ void Integer_lxg<DEVICE>(const std::vector<TBlob> source,
 template<>
 void SetSlice_lxg<DEVICE>(TBlob *dst,
                             TBlob *src,
+			    const real_t idx,
                             RunContext ctx) {
   typedef DEVICE xpu;
   using namespace mshadow;
@@ -324,11 +325,12 @@ void SetSlice_lxg<DEVICE>(TBlob *dst,
   
   CHECK_EQ(src->type_flag_, dst->type_flag_)
       << "Only support input/output with the same data type";
-  
+   
+
   MSHADOW_TYPE_SWITCH(dst->type_flag_, DType, {
         Tensor<xpu, 2, DType> dst_tensor = dst->FlatTo2D<xpu, DType>(s);
         Tensor<xpu, 2, DType> src_tensor = src->FlatTo2D<xpu, DType>(s);
-        dst_tensor.Slice_lxg(src_tensor,0);
+        dst_tensor.Slice_lxg(src_tensor,idx);
 
   });
 }

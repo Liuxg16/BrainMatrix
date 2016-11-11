@@ -143,6 +143,7 @@ void Integer_lxg(const std::vector<TBlob> source,
 template<typename Device>
 void SetSlice_lxg(TBlob *dst,
                             TBlob *src,
+			    const real_t idx,
                             RunContext ctx);
 
 

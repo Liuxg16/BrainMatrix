@@ -395,6 +395,8 @@ struct Tensor: public TRValue<Tensor<Device, dimension, DType>,
 
   /*!
    * author:liuxianggen 
+   * data: 2016-11-10
+   * note: idx is the index of the line  which will be updated
    * \brief set the slice 
    */
   MSHADOW_XINLINE void Slice_lxg(Tensor<Device, dimension, DType> dst,index_t idx) const {
@@ -402,7 +404,7 @@ struct Tensor: public TRValue<Tensor<Device, dimension, DType>,
       for(index_t x = 0; x < s[1]; ++x) {
           
           this[0][idx][x] = dst[0][x];
-          printf("%lf",dst[0][x]);
+//          printf("%lf",dst[0][x]);
       }
   }
 

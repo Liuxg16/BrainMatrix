@@ -429,7 +429,7 @@ void IntegateOp_lxg(const NDArray &lhs,const NDArray &rhs,const real_t &num,
 
 
 // liuxianggen
-void SetSliceOp_lxg(const NDArray *dst,const NDArray &src,const real_t &num,NDArray *out) {
+void SetSliceOp_lxg(const NDArray *dst,const NDArray &src,const real_t &idx,NDArray *out) {
   
   std::vector<Engine::VarHandle> const_vars;
   const_vars.reserve(1);
@@ -441,21 +441,21 @@ void SetSliceOp_lxg(const NDArray *dst,const NDArray &src,const real_t &num,NDAr
 
   switch (dst->ctx().dev_mask()) {
     case cpu::kDevMask: {
-      Engine::Get()->PushSync([src,dst](RunContext ctx) {
+      Engine::Get()->PushSync([src,dst,idx](RunContext ctx) {
           TBlob src_tblob = src.data();
           TBlob dst_tblob = dst->data(); 
           
-          ndarray::SetSlice_lxg<cpu>(&dst_tblob,&src_tblob,  ctx);
+          ndarray::SetSlice_lxg<cpu>(&dst_tblob,&src_tblob,idx,  ctx);
         },src.ctx(), const_vars, {dst->var()});
       break;
     }
 #if MXNET_USE_CUDA
     case gpu::kDevMask: {
-       Engine::Get()->PushSync([src,dst](RunContext ctx) {
+       Engine::Get()->PushSync([src,dst,idx](RunContext ctx) {
           TBlob src_tblob = src.data();
           TBlob dst_tblob = dst->data(); 
           
-          ndarray::SetSlice_lxg<gpu>( &dst_tblob, &src_tblob, ctx);
+          ndarray::SetSlice_lxg<gpu>( &dst_tblob, &src_tblob, idx, ctx);
         },src.ctx(), const_vars, {dst->var()});
       break;
     }
