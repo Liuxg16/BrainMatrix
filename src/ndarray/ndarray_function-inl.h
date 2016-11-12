@@ -8,6 +8,7 @@
 
 #include <vector>
 #include "./ndarray_function.h"
+#include "../operator/operator_common.h"
 // this file will be included twice by CPU and GPU
 // macro to help specialize evaluation function
 
@@ -321,16 +322,20 @@ void SetSlice_lxg<DEVICE>(TBlob *dst,
   typedef DEVICE xpu;
   using namespace mshadow;
   using namespace mshadow::expr;
+  using mshadow::expr::slice;
   Stream<xpu> *s = ctx.get_stream<xpu>();
   
   CHECK_EQ(src->type_flag_, dst->type_flag_)
       << "Only support input/output with the same data type";
-   
-
+ 
   MSHADOW_TYPE_SWITCH(dst->type_flag_, DType, {
         Tensor<xpu, 2, DType> dst_tensor = dst->FlatTo2D<xpu, DType>(s);
         Tensor<xpu, 2, DType> src_tensor = src->FlatTo2D<xpu, DType>(s);
-        dst_tensor.Slice_lxg(src_tensor,idx);
+        index_t begin = 0;
+        index_t end = begin + 1;
+	OpReqType req = kWriteTo;
+
+        Assign(slice<1>(dst_tensor, begin, end), req ,src_tensor);
 
   });
 }
