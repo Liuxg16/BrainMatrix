@@ -314,6 +314,7 @@ void Integer_lxg<DEVICE>(const std::vector<TBlob> source,
 }
 
 // edit by liuxianggen
+// assign the src to the slices of dst, from the index of idx-th column
 template<>
 void SetSlice_lxg<DEVICE>(TBlob *dst,
                             TBlob *src,
@@ -331,8 +332,8 @@ void SetSlice_lxg<DEVICE>(TBlob *dst,
   MSHADOW_TYPE_SWITCH(dst->type_flag_, DType, {
         Tensor<xpu, 2, DType> dst_tensor = dst->FlatTo2D<xpu, DType>(s);
         Tensor<xpu, 2, DType> src_tensor = src->FlatTo2D<xpu, DType>(s);
-        index_t begin = 0;
-        index_t end = begin + 1;
+        index_t begin = idx;
+        index_t end = begin + src_tensor.size(1);
 	OpReqType req = kWriteTo;
 
         Assign(slice<1>(dst_tensor, begin, end), req ,src_tensor);
