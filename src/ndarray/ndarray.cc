@@ -890,9 +890,9 @@ MXNET_REGISTER_NDARRAY_FUN(setslice_lxg)
 .set_num_use_vars(2)
 .set_num_scalars(1)
 .set_num_mutate_vars(1)
-.describe("lxg Clip ndarray elements to range (a_min, a_max)")
-.add_argument("src", "NDArray", "Source input")
-.add_argument("dts", "NDArray", "Source input");
+.describe("set a slice of matrix of 2 dimensions")
+.add_argument("src", "NDArray", "Source input1")
+.add_argument("dts", "NDArray", "Source input2");
 
 
 

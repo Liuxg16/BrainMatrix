@@ -221,6 +221,9 @@ struct power {
   }
 };
 
+
+
+
 /*! \brief used for generate element of maximum */
 struct maximum {
   template<typename DType>
