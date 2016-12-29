@@ -239,7 +239,7 @@ scalapkg:
 			-Dcflags="$(CFLAGS)" -Dldflags="$(LDFLAGS)" \
 			-Dlddeps="$(LIB_DEP)")
 
-scalaKernel:
+scalakernel:
 	(cd $(ROOTDIR)/scalaKernel; \
 		mvn clean compile -e -P$(SCALA_PKG_PROFILE) -Dcxx="$(CXX)" \
 			-Dcflags="$(CFLAGS)" -Dldflags="$(LDFLAGS)" \
