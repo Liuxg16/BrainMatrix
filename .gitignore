@@ -109,13 +109,4 @@ scala-package/*/*/target/
 *.bak
 */node_modules/
 
-# sxnet
-sxnet2.0/*/target/
-sxnet2.0/*/*/target/
-sxnet2.0/data/
-sxnet2.0/model/
-sxnet2.0/output/
-sxnet2.0/seqData/
-sxnet2.0/.project
-sxnet2.0/.classpath
 

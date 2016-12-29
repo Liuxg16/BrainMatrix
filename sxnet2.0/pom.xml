@@ -1,0 +1,198 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>sxnet2.0</groupId>
+	<artifactId>sxnet2.0</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<properties>
+		<scala.version>2.10.6</scala.version>
+	</properties>
+		<dependencies>
+			<dependency>
+				<groupId>org.scala-lang</groupId>
+				<artifactId>scala-library</artifactId>
+				<version>${scala.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.scala-lang</groupId>
+				<artifactId>scala-compiler</artifactId>
+				<version>${scala.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>3.1</version>
+			</dependency>	
+			<dependency>
+				<groupId>net.java.dev.jna</groupId>
+				<artifactId>jna</artifactId>
+				<version>4.2.1</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>1.7.5</version>
+			</dependency>
+
+
+			<dependency>
+				<groupId>commons-codec</groupId>
+				<artifactId>commons-codec</artifactId>
+				<version>1.10</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.scalatest</groupId>
+				<artifactId>scalatest_2.10</artifactId>
+				<version>2.2.6</version>
+				<scope>test</scope>
+			</dependency> 
+
+			<dependency>
+				<groupId>args4j</groupId>
+				<artifactId>args4j</artifactId>
+				<version>2.0.29</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.sksamuel.scrimage</groupId>
+				<artifactId>scrimage-core_2.10</artifactId>
+				<version>2.1.5</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.sksamuel.scrimage</groupId>
+				<artifactId>scrimage-io-extra_2.10</artifactId>
+				<version>2.1.5</version>
+			</dependency>
+			<dependency>
+				<groupId>com.sksamuel.scrimage</groupId>
+				<artifactId>scrimage-filters_2.10</artifactId>
+				<version>2.1.5</version>
+			</dependency>
+
+
+			<!-- <dependency>
+			<groupId>org.scalanlp</groupId>
+			<artifactId>breeze_2.11</artifactId> or 2.11
+			<version>0.12</version>
+			</dependency> -->
+			<!-- https://mvnrepository.com/artifact/org.scalanlp/breeze-macros_2.10 -->
+			<dependency>
+				<groupId>org.scalanlp</groupId>
+				<artifactId>breeze-macros_2.10</artifactId>
+				<version>0.12</version>
+			</dependency>
+
+			<!-- https://mvnrepository.com/artifact/org.scalanlp/breeze-viz_2.10 -->
+			<dependency>
+				<groupId>org.scalanlp</groupId>
+				<artifactId>breeze-viz_2.10</artifactId>
+				<version>0.12</version>
+			</dependency>
+
+
+
+
+	   </dependencies>
+
+
+	<build>
+		<plugins>
+		<plugin>
+			<groupId>org.scala-tools </groupId>
+			<artifactId>maven-scala-plugin </artifactId>
+			<executions>
+			<execution>
+			<goals>
+				<goal>compile</goal>
+				<goal>testCompile</goal>
+			</goals>
+			</execution>
+			</executions>
+			<configuration>
+				<scalaVersion>${scala.version}</scalaVersion>
+				<args>
+					<arg>-target:jvm-1.7 </arg>
+				</args>
+			</configuration>
+		</plugin>
+		<plugin>
+			<groupId>org.apache.maven.plugins </groupId>
+			<artifactId>maven-eclipse-plugin </artifactId>
+			<configuration>
+				<downloadSources>true </downloadSources>
+				<buildcommands>
+				<buildcommand>ch.epfl.lamp.sdt.core.scalabuilder </buildcommand>
+				</buildcommands>
+				<additionalProjectnatures>
+				<projectnature>ch.epfl.lamp.sdt.core.scalanature </projectnature>
+				</additionalProjectnatures>
+				<classpathContainers>
+				<classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER </classpathContainer>
+				<classpathContainer>ch.epfl.lamp.sdt.launching.SCALA_CONTAINER </classpathContainer>
+				</classpathContainers>
+			</configuration>
+		</plugin>
+		<plugin>
+			<groupId>org.codehaus.mojo </groupId>
+			<artifactId>build-helper-maven-plugin </artifactId>
+			<version>1.9.1 </version>
+		</plugin>
+
+		<!-- disable surefire -->
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-surefire-plugin</artifactId>
+			<version>2.7</version>
+			<configuration>
+			<skipTests>true</skipTests>
+			</configuration>
+		</plugin>
+		<!-- enable scalatest -->
+		<plugin>
+			<groupId>org.scalatest</groupId>
+			<artifactId>scalatest-maven-plugin</artifactId>
+			<version>1.0</version>
+			<configuration>
+			<reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+			<junitxml>.</junitxml>
+			<filereports>WDF TestSuite.txt</filereports>
+			</configuration>
+			<executions>
+			<execution>
+			<id>test</id>
+			<goals>
+			<goal>test</goal>
+			</goals>
+			</execution>
+			</executions>
+		</plugin>		
+
+		<plugin>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>exec-maven-plugin</artifactId>
+			<version>1.1.1</version>
+			<executions>
+			<execution>
+			<phase>compile</phase>
+			<goals>
+			<goal>java</goal>
+			</goals>
+			<configuration>
+			<mainClass>thu.brainmatrix.cnn.TestTraininglxg</mainClass>
+			<arguments>
+			<argument>"ee"</argument>
+			<argument>"ee"</argument>
+			</arguments>
+			</configuration>
+			</execution>
+			</executions>
+		</plugin>
+
+
+
+	</plugins>
+	</build>
+  
+</project>
