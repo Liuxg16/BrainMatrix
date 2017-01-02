@@ -2016,3 +2016,29 @@ int MXStaticGraphFree(StaticGraphHandle sghandle) {
   delete static_cast<StaticGraph*>(sghandle);
   API_END();
 }
+
+
+/*
+ * Class:     thu_brainmatrix_LibInfo
+ * Method:    mxStaticGraphSaveToJSON
+ * Signature: (JLthu/brainmatrix/Base/RefString;)I
+ */
+int MXStaticGraphSaveToJSON(StaticGraphHandle sghandle, const char **out_json) {
+  //Symbol *s = static_cast<Symbol*>(symbol);
+  
+  StaticGraph *sg = static_cast<StaticGraph*>(sghandle);
+
+  MXAPIThreadLocalEntry *ret = MXAPIThreadLocalStore::Get();
+  API_BEGIN();
+  std::ostringstream os;
+  dmlc::JSONWriter writer(&os);
+
+  sg->Save(&writer);
+
+//  s->Save(&writer);
+  ret->ret_str = os.str();
+  *out_json = ret->ret_str.c_str();
+  API_END();
+}
+
+

@@ -1510,4 +1510,5 @@ MXNET_DLL int MXScalaSymbolSaveToFile(StaticGraphHandle sghandle, const char *fn
 
 MXNET_DLL int MXStaticGraphFree(StaticGraphHandle sghandle);
 
+MXNET_DLL int MXStaticGraphSaveToJSON(StaticGraphHandle sghandle, const char **out_json);
 #endif  // MXNET_C_API_H_

@@ -1934,4 +1934,15 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxStaticGraphFree
 }
 
 
-
+/*
+ * Class:     thu_brainmatrix_LibInfo
+ * Method:    mxStaticGraphSaveToJSON
+ * Signature: (JLthu/brainmatrix/Base/RefString;)I
+ */
+JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxStaticGraphSaveToJSON
+ (JNIEnv *env, jobject obj, jlong staticGraphPtr, jobject jout) {
+  const char *out;
+  int ret = MXStaticGraphSaveToJSON(reinterpret_cast<StaticGraphHandle>(staticGraphPtr), &out);
+  SetStringField(env, jout, out);
+  return ret;
+}

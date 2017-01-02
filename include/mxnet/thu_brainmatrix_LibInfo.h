@@ -751,6 +751,14 @@ JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxScalaSymbolCreateFromFile
 JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxStaticGraphFree
   (JNIEnv *, jobject, jlong);
 
+/*
+ * Class:     thu_brainmatrix_LibInfo
+ * Method:    mxStaticGraphSaveToJSON
+ * Signature: (JLthu/brainmatrix/Base/RefString;)I
+ */
+JNIEXPORT jint JNICALL Java_thu_brainmatrix_LibInfo_mxStaticGraphSaveToJSON
+  (JNIEnv *, jobject, jlong, jobject);
+
 #ifdef __cplusplus
 }
 #endif

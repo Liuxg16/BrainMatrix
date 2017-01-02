@@ -567,6 +567,7 @@ void StaticGraph::MakeBackwardPass(std::vector<uint32_t> *head_grad_nodes,
 
 void StaticGraph::Node::Save(dmlc::JSONWriter *writer) const {
   writer->BeginObject();
+
   if (op.get() != nullptr) {
     writer->WriteObjectKeyValue("op", op->TypeString());
     std::map<std::string, std::string> param = op->GetParams();
