@@ -240,7 +240,7 @@ scalapkg:
 			-Dlddeps="$(LIB_DEP)")
 
 scalakernel:
-	(cd $(ROOTDIR)/scalaKernel; \
+	(cd $(ROOTDIR)/scalakernel; \
 		mvn clean compile -e -P$(SCALA_PKG_PROFILE) -Dcxx="$(CXX)" \
 			-Dcflags="$(CFLAGS)" -Dldflags="$(LDFLAGS)" \
 			-Dlddeps="$(LIB_DEP)")

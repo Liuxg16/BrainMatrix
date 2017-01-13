@@ -110,3 +110,12 @@ scala-package/*/*/target/
 */node_modules/
 
 
+# scalakernel
+scalakernel/output/*
+scalakernel/data/*.jpg
+scalakernel/data/*.png
+scalakernel/model/obama*
+scalakernel/*.jpg
+scalakernel/*.png
+
+
