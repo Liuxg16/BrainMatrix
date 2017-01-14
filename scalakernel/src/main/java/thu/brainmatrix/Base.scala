@@ -61,7 +61,7 @@ object Base {
           "(for Windows: PATH, for Linux: LD_LIBRARY_PATH), " +
           "or specifying by Java cmd option -Djava.library.path=[lib path]." +
           "Exception:", e)
-        NativeLibraryLoader.loadLibrary("brainmatrix-scala")
+        NativeLibraryLoader.loadLibrary("mxnet")
     }
   } catch {
     case e: UnsatisfiedLinkError =>

@@ -7,7 +7,8 @@ import org.slf4j.{Logger, LoggerFactory}
 class NativeLibraryLoader
 object NativeLibraryLoader {
   private val logger: Logger = LoggerFactory.getLogger(classOf[NativeLibraryLoader])
-  private val libPathInJar = "/lib/native/"
+  //maybe not very good!
+  private val libPathInJar = "../native/lib/"
   private val _tempDir: File =
     try {
       val tempDir = File.createTempFile("mxnet", "")
@@ -69,7 +70,7 @@ object NativeLibraryLoader {
     val libFileInJar = libPathInJar + loadLibname
     val is: InputStream = getClass.getResourceAsStream(libFileInJar)
     if (is == null) {
-      throw new UnsatisfiedLinkError(s"Couldn't find the resource $loadLibname")
+      throw new UnsatisfiedLinkError(s"Couldn't find the resource $loadLibname **** $libFileInJar")
     }
     logger.info(s"Loading $loadLibname from $libPathInJar copying to $libname")
     loadLibraryFromStream(libname, is)

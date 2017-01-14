@@ -117,5 +117,9 @@ scalakernel/data/*.png
 scalakernel/model/obama*
 scalakernel/*.jpg
 scalakernel/*.png
-
-
+scalakernel/.cache-main
+scalakernel/.cache-tests
+# config
+.metadata/*
+*~
+.config.mk
