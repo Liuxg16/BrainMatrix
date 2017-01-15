@@ -3,7 +3,6 @@ package thu.brainmatrix
 import thu.brainmatrix.Base._
 import thu.brainmatrix.io.{MXDataPack, MXDataIter}
 import org.slf4j.LoggerFactory
-
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -70,6 +69,7 @@ object IO {
     val paramStr = Base.ctypes2docstring(argNames, argTypes, argDescs)
     val docStr = s"${name.value}\n${desc.value}\n\n$paramStr\n"
     logger.debug(docStr)
+//    println(docStr)
     (name.value, creator(handle))
   }
 

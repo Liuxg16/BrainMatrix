@@ -21,23 +21,36 @@ import thu.brainmatrix.util.CVTool
  */
 class IOSuite extends FunSuite with BeforeAndAfterAll{
     
+      test("cifar dataset") {
+        val batchSize = 100
+        val trainDataIter = IO.ImageRecordIter(Map(
+          "path_imgrec" -> "data/cifar10_val.rec",
+          "label_width" -> "1",
+          "data_shape" -> "(3,28,28)",
+          "shuffle" -> "1",
+          "batch_size" -> batchSize.toString))
+        
+        val data = takeIterElemt(trainDataIter,30).data.head.slice(0)
+        assert(data.shape === Shape(1,3,28,28))
+//        println(NDArray.max(data))  
+//        CVTool.saveRGBImage(data.copy(), "./output/cifar.jpg")
+
+    }
+  
+  
+  
     test("mnist dataset") {
         val batchSize = 100
         val trainDataIter = IO.MNISTIter(scala.collection.immutable.Map(
-          "image" -> "data/train-images-idx3-ubyte",
-          "label" -> "data/train-labels-idx1-ubyte",
-          "data_shape" -> "(1, 28, 28)",
-          "label_name" -> "sm_label",
-          "batch_size" -> batchSize.toString,
+          "path_imgrec" -> "data/cifar10_val.rec",
+          "label_width" -> "1",
+          "data_shape" -> "(3,28,28)",
           "shuffle" -> "1",
-          "flat" -> "0",
-          "silent" -> "0",
-          "seed" -> "10"))
+          "batch_size" -> batchSize.toString))
         
         val data = takeIterElemt(trainDataIter,30).data.head
-//        println(NDArray.max(data))
-//        
-//        CVTool.saveGrayImage(data*255, "mnist.jpg")
+        println(NDArray.max(data))  
+        CVTool.saveFlattenImage(data*255, "cifar.jpg")
 
     }
     
@@ -138,5 +151,8 @@ class IOSuite extends FunSuite with BeforeAndAfterAll{
         }
         assert(batchCount === nBatch1)
   }
+    
+      
+    
     
 }

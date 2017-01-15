@@ -14,6 +14,8 @@ object CVTool {
        out.output(filename)(JpegWriter())
      }
      
+     
+     // can process (n,1,-1,-1) ndarray
      def saveFlattenImage(img: NDArray, filename: String): Unit = {   
     	  
     	val shape = img.shape
@@ -71,12 +73,18 @@ object CVTool {
        out.output(filename)(JpegWriter())
   	}
   
+     
+    def saveRGBImage(img: NDArray, filename: String): Unit = {    
+       val out = postprocessImage(img)
+       out.output(filename)(JpegWriter())
+  	} 
+     
    
    
     /**
-     * @author 
+     * @author :Liu Xianggen
      * @date 
-     * @brief process:ndarray to image
+     * @brief process:ndarray to image whose shape matches (3,m,n)
      * @param
      * @return
      * @example
@@ -93,6 +101,7 @@ object CVTool {
         Image(img.shape(3), img.shape(2), pixels.toArray)
       }
 
+    
     /**
      * @author 
      * @date 
