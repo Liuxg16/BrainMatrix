@@ -18,7 +18,7 @@ object ExampleVis {
       "Inception_BN", "Inception_V3", "ResNet_Small")
 
   val netShapes = Map(
-      "LeNet" -> Shape(1, 1, 32, 32),
+      "LeNet" -> Shape(1, 1, 28, 28),
       "AlexNet" -> Shape(1, 1, 224, 224),
       "VGG" -> Shape(1, 1, 224, 224),
       "GoogleNet" -> Shape(1, 1, 299, 299),

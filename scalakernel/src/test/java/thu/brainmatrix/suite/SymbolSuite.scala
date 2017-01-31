@@ -31,7 +31,6 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 	    val batchSize = 5
 	    val dataShape = Shape(batchSize, 1, 4, 4)
 	    
-	    
 	    val data = Symbol.CreateVariable("data")
 	    val label = Symbol.CreateVariable("label")
 	    
@@ -48,9 +47,6 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
   		val dGradDict = (dArgNames.zip(dArgShapes)).filter { case (name, shape) =>
   			!dLabelShape.contains(name)
   			}.map(x => x._1 -> NDArray.empty(x._2, ctx) ).toMap
-                   
-  
-  		
   			
   		val gAuxNames = net.listAuxiliaryStates()
   		val gAuxDict = gAuxNames.zip(dAuxShapes.map(NDArray.empty(_, ctx))).toMap
@@ -82,22 +78,23 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 		val ctx = Context.cpu(0)
 	    
 	    val batchSize = 5
+	    val kernel_num = 9
 	    val ngf = 3
 //	    val iShape = Shape(ngf * 4, 4, 4) 
 	    val oShape = Shape(ngf,8,8)
-	    val dataShape = Shape(batchSize, 1, 4, 4)
+	    val dataShape = Shape(batchSize, kernel_num, 4, 4)
 	    
-	    val kernelShape = Shape(3,3)
 	    val stride = (2,2)
 	    val targetShape = (oShape(oShape.length - 2), oShape(oShape.length - 1))
 	    
 	    val data = Symbol.CreateVariable("data")
-		val net = Symbol.BatchNorm("bn")(Map("data" -> data, "fix_gamma" -> true, "eps" -> 1e-12))	    
+	    
+		  val net = Symbol.BatchNorm("bn")(Map("data" -> data,"fix_gamma" -> true, "eps" -> 1e-12))	    
 		
 	    val dDataShape = Map("data" -> dataShape)
   		val dLabelShape = Map("dloss_label" -> Shape(batchSize))
                                            
-        val (dArgShapes, _, dAuxShapes) = net.inferShape(dDataShape ++ dLabelShape)
+      val (dArgShapes, _, dAuxShapes) = net.inferShape(dDataShape ++ dLabelShape)
 	    val dArgNames = net.listArguments()
   		val dArgDict = dArgNames.zip(
   				dArgShapes.map(NDArray.zeros(_, ctx))).toMap
@@ -115,7 +112,6 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
   			
   		val gAuxNames = net.listAuxiliaryStates()
   		val gAuxDict = gAuxNames.zip(dAuxShapes.map(NDArray.empty(_, ctx))).toMap
-  		
   		
   		dArgDict("data").set(Random.normal(0, 1.0f, dataShape, ctx))
    		val executor =net.bind(ctx, dArgDict, dGradDict, "write", gAuxDict, null, null)
