@@ -239,7 +239,7 @@ class DataIter_(count:Int,batch_size:Int,feature_size:Int,vocab_size: Int) exten
     	(data,label)
     }).toArray
     
-    println(s"DataIter_ batches:${datas.length}")
+//    println(s"DataIter_ batches:${datas.length}")
     /**
      * wrong template
      */

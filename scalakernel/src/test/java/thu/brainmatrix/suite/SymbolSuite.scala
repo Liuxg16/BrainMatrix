@@ -15,11 +15,6 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 class SymbolSuite extends FunSuite with BeforeAndAfterAll{
   	
 	
-	
-	
-	
-	
-	
 	/**
 	 * author: liuxianggen
 	 * 2017-1-11
@@ -57,10 +52,10 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
   		
 	    executor.forward()
 	    val out2 = executor.outputs(0).slice(0)
-	    println(out2.reshape(out2.shape.toArray.takeRight(2)))
+//	    println(out2.reshape(out2.shape.toArray.takeRight(2)))
 	    
 	    executor.backward()
-	    println(dGradDict("data").slice(0).reshape(out2.shape.toArray.takeRight(2)))
+//	    println(dGradDict("data").slice(0).reshape(out2.shape.toArray.takeRight(2)))
 	}
 	
 	
@@ -103,11 +98,11 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
   			!dLabelShape.contains(name)
   			}.map(x => x._1 -> NDArray.empty(x._2, ctx) ).toMap
                    
-  		println(dArgShapes)
-  		println(dAuxShapes)
-  		
-  		dArgNames.foreach { x => println(x) }
-  		net.listAuxiliaryStates().foreach(println)
+//  		println(dArgShapes)
+//  		println(dAuxShapes)
+//  		
+//  		dArgNames.foreach { x => println(x) }
+//  		net.listAuxiliaryStates().foreach(println)
   		
   			
   		val gAuxNames = net.listAuxiliaryStates()
@@ -116,9 +111,9 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
   		dArgDict("data").set(Random.normal(0, 1.0f, dataShape, ctx))
    		val executor =net.bind(ctx, dArgDict, dGradDict, "write", gAuxDict, null, null)
   		
-	    executor.forward()
-	    val out2 = executor.outputs(0)
-	    println(out2.shape)
+//	    executor.forward()
+//	    val out2 = executor.outputs(0)
+//	    println(out2.shape)
 	}
 	
 
@@ -170,12 +165,12 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
   			!dLabelShape.contains(name)
   			}.map(x => x._1 -> NDArray.empty(x._2, ctx) ).toMap
                    
-  		println(dArgShapes)
+//  		println(dArgShapes)
   			
 	    val executor = net.easy_bind(ctx = Context.cpu(0), args = dArgDict)
 	    executor.forward()
 	    val out2 = executor.outputs(0).slice(0)
-	    println(out2.reshape(out2.shape.toArray.takeRight(3)))
+//	    println(out2.reshape(out2.shape.toArray.takeRight(3)))
 	}
 	
 	
@@ -193,11 +188,11 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
       	val rshape = Shape(2,3)
 //      	res.listArguments().foreach(println)
       	val (a,b,c) = res.inferShape(Map("rhs"->rshape))
-      	a.foreach {x => println(x)}
+//      	a.foreach {x => println(x)}
       	val rhsArr = NDArray.array(Array(1,0,1,-2,1,0),rshape)
       	val lhsArr = NDArray.array(Array(1,2,3,4,5,6,1,2,3,4,5,6),lshape)	
-      	println("rhsArr:"+rhsArr)
-      	println("lhsArr:"+lhsArr)
+//      	println("rhsArr:"+rhsArr)
+//      	println("lhsArr:"+lhsArr)
 //      	println("sigmoid rhsArr:"+NDArray.sigmod(rhsArr))
 //      	println("sigmoid lhsArr:"+NDArray.sigmod(lhsArr))
       	val rhsArr_g = NDArray.zeros(rshape)
@@ -206,20 +201,20 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
       	val executor = res.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr,"rhs"->rhsArr),argsGrad = Map("lhs"->lhsArr_g,"rhs"->rhsArr_g))
       	executor.forward(isTrain=true)
       	val out2 = executor.outputs(0)
-      	println(out2)
+//      	println(out2)
       	val error = NDArray.array(Array(2,0,0,0,0,-1,0,0),Shape(2,4))
 //      	val error = NDArray.ones(Shape(2,4))
       	
       	
       	
-      	println("errro:"+error)
+//      	println("errro:"+error)
       	executor.backward(error)
       	
       	val resarr = NDArray.dot(rhsArr,NDArray.transpose(lhsArr))
       	val temp = error*(NDArray.sigmod(resarr)*(NDArray.sigmod(resarr)*(-1)+1))
-      	println("sigmoid gradient:" + NDArray.dot(temp, lhsArr))
-      	println("-------------------------------")
-      	executor.gradArrays.foreach {println}
+//      	println("sigmoid gradient:" + NDArray.dot(temp, lhsArr))
+//      	println("-------------------------------")
+//      	executor.gradArrays.foreach {println}
 	}
 	
 	
@@ -235,22 +230,22 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 //      	a.foreach {x => println(x)}
       	val rhsArr = NDArray.array(Array(10,0,1,-2,1,0),lshape)
       	val lhsArr = NDArray.array(Array(1,2,3,4,5,6),lshape)	
-      	println("rhsArr:"+rhsArr)
-      	println("lhsArr:"+lhsArr)
+//      	println("rhsArr:"+rhsArr)
+//      	println("lhsArr:"+lhsArr)
       	val rhsArr_g = NDArray.zeros(lshape)
       	val lhsArr_g = NDArray.zeros(lshape)	
 
       	val executor = res.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr,"rhs"->rhsArr),argsGrad = Map("lhs"->lhsArr_g,"rhs"->rhsArr_g))
       	executor.forward(isTrain=true)
       	val out2 = executor.outputs(0)
-      	println(out2)
+//      	println(out2)
       	val error = NDArray.array(Array(2,0,0,0,-1,0),Shape(2,3))
 //      	val error = NDArray.ones(Shape(2,4))
       	
-      	println("errro:"+error)
+//      	println("errro:"+error)
       	executor.backward(error)
-      	println("-------------------------------")
-      	executor.gradArrays.foreach {println}
+//      	println("-------------------------------")
+//      	executor.gradArrays.foreach {println}
 	}
 	
 	
@@ -267,22 +262,22 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 //      	a.foreach {x => println(x)}
       	val rhsArr = NDArray.array(Array(1,0,1,-2,1,0),lshape)
       	val lhsArr = NDArray.array(Array(1,2,3,4,5,6),lshape)	
-      	println("rhsArr:"+rhsArr)
-      	println("lhsArr:"+lhsArr)
+//      	println("rhsArr:"+rhsArr)
+//      	println("lhsArr:"+lhsArr)
       	val rhsArr_g = NDArray.zeros(lshape)
       	val lhsArr_g = NDArray.zeros(lshape)	
 
       	val executor = res.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr,"rhs"->rhsArr),argsGrad = Map("lhs"->lhsArr_g,"rhs"->rhsArr_g))
       	executor.forward(isTrain=true)
       	val out2 = executor.outputs(0)
-      	println(out2)
+//      	println(out2)
       	val error = NDArray.diag(Shape(2,3))
 //      	val error = NDArray.ones(Shape(2,4))
       	
-      	println("errro:"+error)
+//      	println("errro:"+error)
       	executor.backward(error)
-      	println("-------------------------------")
-      	executor.gradArrays.foreach {println}
+//      	println("-------------------------------")
+//      	executor.gradArrays.foreach {println}
 	}
 	
 	
@@ -299,25 +294,25 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 //      	a.foreach {x => println(x)}
       	val rhsArr = NDArray.array(Array(1,0,1,-2,1,0),rshape)
       	val lhsArr = NDArray.array(Array(1,2,3,4,5,6,1,2,3,4,5,6),lshape)	
-      	println("rhsArr:"+rhsArr)
-      	println("lhsArr:"+lhsArr)
+//      	println("rhsArr:"+rhsArr)
+//      	println("lhsArr:"+lhsArr)
       	val rhsArr_g = NDArray.zeros(rshape)
       	val lhsArr_g = NDArray.zeros(lshape)	
       	
-      	println("ddd")
+//      	println("ddd")
       	
       	
       	val executor = res.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr,"rhs"->rhsArr),argsGrad = Map("lhs"->lhsArr_g,"rhs"->rhsArr_g))
       	executor.forward(isTrain=true)
       	val out2 = executor.outputs(0)
-      	println(out2)
+//      	println(out2)
       	val error = NDArray.array(Array(2,0,0,0,0,-1,0,0),Shape(2,4))
 //      	val error = NDArray.ones(Shape(2,4))
       	
-      	println("errro:"+error)
+//      	println("errro:"+error)
       	executor.backward(error)
-      	println("-------------------------------")
-      	executor.gradArrays.foreach {println}
+//      	println("-------------------------------")
+//      	executor.gradArrays.foreach {println}
 	}
 	
 	
@@ -337,7 +332,7 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 	    val executor = res.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr))
 	    executor.forward()
 	    val out2 = executor.outputs(0)
-	    println(out2)
+//	    println(out2)
 	}
 	
 	
@@ -376,11 +371,10 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 	    val executor = sum.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr,"rhs"->rhsArr,"weight"->weightArr),argsGrad = gradDict)
 	    println("num:"+executor.outputs.length)
 	    var out2 = executor.outputs(0)
-	    println(out2)	
+//	    println(out2)	
 	    val gradarr = NDArray.array(Array(1f),Shape(1),Context.defaultCtx) 
 	    executor.backward(executor.outputs(0))
-	    println("ddd")
-	    executor.gradArrays.foreach {println}	
+//	    executor.gradArrays.foreach {println}	
 	}
 	
 	
@@ -401,15 +395,15 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 	    val sum = Symbol.sum(fully)
 	    val lhsArr = NDArray.array(Array(1f,2f,3f,10f),Shape(2,2))
 	    val weightArr = NDArray.zeros(Shape(2,2))
-	    val executor = sum.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr,"weight"->weightArr))
-	    println(sum.staticGraph.debug)
-	    executor.forward(isTrain = true)
-	    var out2 = executor.outputs(0).copy()
-	    println(out2)	
-	    val gradarr = NDArray.array(Array(1f),Shape(1)) 
-	    executor.backward(gradarr)
+//	    val executor = sum.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr,"weight"->weightArr))
+////	    println(sum.staticGraph.debug)
+//	    executor.forward(isTrain = true)
+//	    var out2 = executor.outputs(0).copy()
+////	    println(out2)	
+//	    val gradarr = NDArray.array(Array(1f),Shape(1)) 
+//	    executor.backward(gradarr)
 	    
-	    executor.gradArrays.foreach {println}	
+//	    executor.gradArrays.foreach {println}	
 	}
 	
 	
@@ -422,7 +416,7 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 	    val executor = sum.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr))
 	    executor.forward()
 	    val out2 = executor.outputs(0)
-	    println(out2.shape)
+//	    println(out2.shape)
    }
     
     
@@ -443,8 +437,8 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 	    val executor = res.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr))
 	    executor.forward()
 	    val out2 = executor.outputs(0)
-	    println(out2)
-	    println(executor.outputs(1))
+//	    println(out2)
+//	    println(executor.outputs(1))
    }
     
     
@@ -455,10 +449,10 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
     	val ret = Symbol.broadcast_minus(lhs,rhs)
     	val lhsArr = NDArray.ones(Shape(4,2))*2
     	val rhsArr = NDArray.ones(Shape(1,2))
-    	val executor = ret.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr,"rhs"->rhsArr))
-    	executor.forward()
-    	val out2 = executor.outputs(0)
-    	println(out2)
+//    	val executor = ret.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr,"rhs"->rhsArr))
+//    	executor.forward()
+//    	val out2 = executor.outputs(0)
+//    	println(out2)
 	}
 	
 	
@@ -468,10 +462,10 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
   		val inputs = Symbol.Reshape()(Map("data" -> label, "shape" -> "(-1,-1,6)"))
   		val shape = Shape(3, 4)
   		val lhsArr = NDArray.ones(shape)
-		val executor = inputs.easy_bind(ctx = Context.cpu(), args = Map("label"->lhsArr))
-		executor.forward()
-		val out2 = executor.outputs(0)
-  		println(out2.shape)
+//		  val executor = inputs.easy_bind(ctx = Context.cpu(), args = Map("label"->lhsArr))
+//		  executor.forward()
+//		  val out2 = executor.outputs(0)
+//  		println(out2.shape)
   	}
 	
 	test("reshape"){
@@ -482,7 +476,7 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 		val executor = inputs.easy_bind(ctx = Context.cpu(), args = Map("label"->lhsArr))
 		executor.forward()
 		val out2 = executor.outputs(0)
-  		println(out2.shape)
+//  		println(out2.shape)
   	}
 
 	
@@ -495,7 +489,7 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
 		val executor = inputs.easy_bind(ctx = Context.cpu(), args = Map("data"->lhsArr))
 		executor.forward()
 		val out2 = executor.outputs(0)
-    	println(out2.shape)
+//    	println(out2.shape)
     	
 	}
 	
@@ -511,7 +505,7 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
     executor.forward()
     val out1 = lhsArr*2
     val out2 = executor.outputs(0)
-    println(out2)
+//    println(out2)
     
   }
   
@@ -524,14 +518,13 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
   test("concat") {
     val shape = Shape(10, 3)
     val lhs = Symbol.CreateVariable("lhs")
-    
     val concat0=Symbol.Concat("concat0")(Array(lhs))
     assert(concat0.listArguments().toArray === Array("lhs"))
     val lhsArr = NDArray.ones(shape)
     val executor = concat0.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr))
     executor.forward()
     val out2 = executor.outputs(0)
-    println(out2)
+//    println(out2)
   }
   
   /**
@@ -548,7 +541,7 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
     val executor = ret.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr,"rhs"->rhsArr))
     executor.forward()
     val out2 = executor.outputs(0)
-    println(out2)
+//    println(out2)
   }
   
   /**
@@ -582,9 +575,9 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
       val executor = ret.easy_bind(ctx = Context.cpu(), args = Map("data"->dataArr,"fc1_weight"->fc1_weight,"fc1_bias"->fc1_bias,"label"->labelArr))
       executor.forward(isTrain=true)
       val out2 = executor.outputs(0)
-      println(out2)
+//      println(out2)
       executor.backward()
-      executor.gradArrays.foreach {println}
+//      executor.gradArrays.foreach {println}
   }
   /**
    * @author liuxianggen
@@ -609,13 +602,13 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
       
       val dataArr = NDArray.ones(shape)
       dataArr(1,1) = 2
-      println(math.exp(2)/(math.exp(1)*2+math.exp(2)))
+//      println(math.exp(2)/(math.exp(1)*2+math.exp(2)))
       val labelArr = NDArray.ones(Shape(batch_size))*3
       
       val executor = ret.easy_bind(ctx = Context.cpu(), args = Map("data"->dataArr,"label"->labelArr))
       executor.forward(isTrain=true)
       val out2 = executor.outputs(0)
-      println(out2)
+//      println(out2)
 //      executor.backward()
 //      executor.gradArrays.foreach {println}
   }
@@ -635,7 +628,7 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
     val executor = ret.easy_bind(ctx = Context.cpu(), args = Map("lhs"->lhsArr,"rhs"->rhsArr))
     executor.forward()
     val out2 = executor.outputs(0)
-    println(out2)
+//    println(out2)
   }
   
 
@@ -660,7 +653,7 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
       val executor = embed.easy_bind(ctx = Context.cpu(), args = Map("data"->dataarr,"embed_W"->embedWeightarr))
       executor.forward()
       val out2 = executor.outputs(0)
-      println(out2)
+//      println(out2)
   }
   
   /**
@@ -672,7 +665,7 @@ class SymbolSuite extends FunSuite with BeforeAndAfterAll{
                                        "num_filter" -> 32, "kernel" -> (3, 3), "stride" -> (2, 2)))
 
       conv1.listAuxiliaryStates().foreach(println)
-      println("listAuxTest end ")
+//      println("listAuxTest end ")
    }
   
   

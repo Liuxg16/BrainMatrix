@@ -231,7 +231,7 @@ class DataIter_nce(count:Int,batch_size:Int,feature_size:Int,vocab_size: Int,num
     	(data,label,label_weight)
     }).toArray
     
-    println(s"DataIter_ batches:${datas.length}")
+    // println(s"DataIter_ batches:${datas.length}")
     /**
      * wrong template
      */

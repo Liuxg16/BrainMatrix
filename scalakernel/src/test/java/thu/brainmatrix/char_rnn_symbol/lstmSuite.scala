@@ -47,13 +47,13 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
 		val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
 	  	var bacov = for((k,v)<- vocab) yield (v,k)
 	  	bacov = bacov.updated(5, '?')
-	  	println(bacov(5))
-	  	println(bacov)
+	  	assert(bacov(5)=='?')
+//	  	println(bacov)
   }
   
   	test("data&label"){
 	  	val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
-	  var bacov = for((k,v)<- vocab) yield (v,k)
+	    var bacov = for((k,v)<- vocab) yield (v,k)
   	  bacov = bacov.updated(bacov.size-1, '?')
       val n_alphabet = vocab.size
       val lstm = Lstm.LSTMNet(LSTM_N_LAYER, SEQ_LENGTH, DIM_HIDDEN, DIM_EMBED, n_alphabet, DROPOUT)
@@ -70,16 +70,16 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
 	      val label = databatch.label
 	      val dataText = data.map(x =>bacov(x(0,0).toInt)).mkString
 	      val labelText = label.map(x =>bacov(x(0).toInt)).mkString
-	      println("------------------------------")
-	      println(dataText)
-		  println("------------------------------")
-		   println(labelText)
+//	      println("------------------------------")
+//	      println(dataText)
+//		  println("------------------------------")
+//		   println(labelText)
       }
    }
   
   	test("lstm_vec_DataIter"){
   	  val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
-	  var bacov = for((k,v)<- vocab) yield (v,k)
+	    var bacov = for((k,v)<- vocab) yield (v,k)
   	  bacov = bacov.updated(bacov.size-1, '?')
   	  println(bacov)
       val n_alphabet = vocab.size
@@ -101,18 +101,18 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
 //	     	  val temp = 
 	     	  bacov(NDArray.argmaxChannel(x).toArray(0).toInt)
 	      }).mkString
-	      println("------------------------------")
+//	      println("------------------------------")
 	      val labelText = label.map(x =>bacov(x(0).toInt)).mkString
 	      
-	      println(dataText)
-		  println("------------------------------")
-		   println(labelText)
+//	      println(dataText)
+//		  println("------------------------------")
+//		   println(labelText)
       }
     }
   	
   	test("RNN_OneHot_DataIter"){
   	  val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
-	  var bacov = for((k,v)<- vocab) yield (v,k)
+	    var bacov = for((k,v)<- vocab) yield (v,k)
   	  bacov = bacov.updated(bacov.size-1, '?')
   	  println(bacov)
       val n_alphabet = vocab.size
@@ -139,12 +139,12 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
 //	     	  val temp = 
 //	     	  bacov(NDArray.argmaxChannel(x).toArray(0).toInt)
 //	      }).mkString
-	      println("------------------------------------------------------------")
-	      val labelText = label.toArray.map(x => bacov(x.toInt)).foldRight("")(_+_)
-//	      
-	      println(data_text)
-		  println("-------------------------------------------------------------")
-		   println(labelText)
+//	      println("------------------------------------------------------------")
+//	      val labelText = label.toArray.map(x => bacov(x.toInt)).foldRight("")(_+_)
+////	      
+//	      println(data_text)
+//		  println("-------------------------------------------------------------")
+//		   println(labelText)
 //      }
       }
   	
@@ -152,32 +152,32 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
   	
   	test("2layer-lstm") {
   		
-  		val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
-      	val n_alphabet = vocab.size
-      	val lstm = Lstm.LSTMNet(LSTM_N_LAYER, SEQ_LENGTH, DIM_HIDDEN, DIM_EMBED, n_alphabet, DROPOUT)
-      	
-      	val source  = Source.fromFile(INPUT_FILE_NAME) 
-	    val seq_input = source.mkString
-	    val len_train = math.round(seq_input.length()*DATA_TRAIN_RATIO).toInt
-		val text_train = seq_input.take(len_train)
-  		val text_val = seq_input.drop(len_train)
+  		  val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
+        val n_alphabet = vocab.size
+        val lstm = Lstm.LSTMNet(LSTM_N_LAYER, SEQ_LENGTH, DIM_HIDDEN, DIM_EMBED, n_alphabet, DROPOUT)
+       
+        val source  = Source.fromFile(INPUT_FILE_NAME) 
+  	    val seq_input = source.mkString
+  	    val len_train = math.round(seq_input.length()*DATA_TRAIN_RATIO).toInt
+  		  val text_train = seq_input.take(len_train)
+    		val text_val = seq_input.drop(len_train)
       	val traindata = seq_IO.lstmDataIter(text = text_train,labelName = "label",vocab = vocab,batch_size = BATCH_SIZE,seq_len = SEQ_LENGTH)
       	val aux_input= Map("_l0_init_h"->Shape(16,64),"_l0_init_c"->Shape(16,64),"_l1_init_h"->Shape(16,64),"_l1_init_c"->Shape(16,64)) ++ traindata.provideData ++ traindata.provideLabel
       	//val map_infer = for((x,y)<-aux_input) yield (x,Random.uniform(0f, 0.1f, y))
-    	val executor = lstm.simpleBind(ctx = Context.cpu(),gradReq = "write",shapeDict = aux_input)
-    	
-		executor.forward(true)
-		val out0 = executor.outputs(0)
-		val out15 = executor.outputs(29)
-		val out2 = executor.outputs(SEQ_LENGTH-1)
-		println(out0)
-	    println(out15)		
-	    println("----------------------------------------------")
-	    println(out2)
-//  		executor.backward()
-//  		println("----------------------------------------------")
-//	    println(executor.gradArrays(0))
-    	println("end...")
+//    	val executor = lstm.simpleBind(ctx = Context.cpu(),gradReq = "write",shapeDict = aux_input)
+//    	
+//		executor.forward(true)
+//		val out0 = executor.outputs(0)
+//		val out15 = executor.outputs(29)
+//		val out2 = executor.outputs(SEQ_LENGTH-1)
+//		println(out0)
+//	    println(out15)		
+//	    println("----------------------------------------------")
+//	    println(out2)
+////  		executor.backward()
+////  		println("----------------------------------------------")
+////	    println(executor.gradArrays(0))
+//    	println("end...")
     	
   	}
   	
@@ -185,33 +185,33 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
   	test("1 layer-lstm") {
   		
   		val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
-      	val n_alphabet = vocab.size
-      	val lstm = Lstm.LSTMNet(LSTM_N_LAYER, SEQ_LENGTH, DIM_HIDDEN, DIM_EMBED, n_alphabet, DROPOUT)
-      	lstm.listArguments().foreach {println}
-      	println(lstm.debug())
-      	val source  = Source.fromFile(INPUT_FILE_NAME) 
+      val n_alphabet = vocab.size
+      val lstm = Lstm.LSTMNet(LSTM_N_LAYER, SEQ_LENGTH, DIM_HIDDEN, DIM_EMBED, n_alphabet, DROPOUT)
+//     	lstm.listArguments().foreach {println}
+//     	println(lstm.debug())
+      val source  = Source.fromFile(INPUT_FILE_NAME) 
 	    val seq_input = source.mkString
 	    val len_train = math.round(seq_input.length()*DATA_TRAIN_RATIO).toInt
-		val text_train = seq_input.take(len_train)
+		  val text_train = seq_input.take(len_train)
   		val text_val = seq_input.drop(len_train)
       	val traindata = seq_IO.lstm_vec_DataIter(text = text_train,labelName = "label",vocab = vocab,batch_size = BATCH_SIZE,seq_len = SEQ_LENGTH,vocab_len = n_alphabet)
       	val aux_input= Map("_l0_init_h"->Shape(BATCH_SIZE,DIM_HIDDEN),"_l0_init_c"->Shape(BATCH_SIZE,DIM_HIDDEN),"_l1_init_h"->Shape(BATCH_SIZE,DIM_HIDDEN),"_l1_init_c"->Shape(BATCH_SIZE,DIM_HIDDEN)) ++ traindata.provideData ++ traindata.provideLabel
       	//val map_infer = for((x,y)<-aux_input) yield (x,Random.uniform(0f, 0.1f, y))
-      	println(aux_input)
-    	val executor = lstm.simpleBind(ctx = Context.cpu(),gradReq = "write",shapeDict = aux_input)
-    	
-		executor.forward(true)
-		val out0 = executor.outputs(0)
-		val out15 = executor.outputs(29)
-		val out2 = executor.outputs(SEQ_LENGTH-1)
-		println(out0)
-	    println(out15)		
-	    println("----------------------------------------------")
-	    println(out2)
-  		executor.backward()
-  		println("----------------------------------------------")
-//	    (executor.gradArrays).foreach {println}
-    	println("end...")
+//      	println(aux_input)
+//    	val executor = lstm.simpleBind(ctx = Context.cpu(),gradReq = "write",shapeDict = aux_input)
+//    	
+//		executor.forward(true)
+//		val out0 = executor.outputs(0)
+//		val out15 = executor.outputs(29)
+//		val out2 = executor.outputs(SEQ_LENGTH-1)
+//		println(out0)
+//	    println(out15)		
+//	    println("----------------------------------------------")
+//	    println(out2)
+//  		executor.backward()
+//  		println("----------------------------------------------")
+////	    (executor.gradArrays).foreach {println}
+//    	println("end...")
     	
   	}
   	
@@ -220,14 +220,14 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
   		val source  = Source.fromFile(INPUT_FILE_NAME) 
   		val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
 	    val seq_input = source.mkString.map(vocab)
-	    println(seq_input.take(100))
+//	    println(seq_input.take(100))
   	}
   	
   	
   	test("check params"){
-  		val pretrained = NDArray.load2Map(s"./model/charLSTM.params_${N_EPOCH}")
-    	println(pretrained.keys)
-    	println(pretrained("argParams::_pred_0_weight"))
+//  		val pretrained = NDArray.load2Map(s"./model/charLSTM.params_${N_EPOCH}")
+//    	println(pretrained.keys)
+//    	println(pretrained("argParams::_pred_0_weight"))
   	}
   	
   	 test("debugTraining"){
@@ -235,13 +235,13 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
 	  	val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
       	val n_alphabet = vocab.size
       	val lstm = Lstm.LSTM(LSTM_N_LAYER, SEQ_LENGTH, DIM_HIDDEN, DIM_EMBED, n_alphabet, DROPOUT)
-      	lstm.listArguments().foreach {println}
+//      	lstm.listArguments().foreach {println}
 	  	val shapeInfer = Map("_l0_init_h"->Shape(BATCH_SIZE,DIM_HIDDEN),"_l0_init_c"->Shape(BATCH_SIZE,DIM_HIDDEN),"_l1_init_h"->Shape(BATCH_SIZE,DIM_HIDDEN),
 	  			"_l1_init_c"->Shape(BATCH_SIZE,DIM_HIDDEN),"data"->Shape(BATCH_SIZE,SEQ_LENGTH,n_alphabet),"label"->Shape(BATCH_SIZE,SEQ_LENGTH))
-	  	val (a,b,c) = lstm.inferShape(shapeInfer)
+//	  	val (a,b,c) = lstm.inferShape(shapeInfer)
 //	  	val exe = lstm.simpleBind(Context.defaultCtx,shapeDict=shapeInfer)
-    	a.foreach(println)
-    	b.foreach {println}
+//    	a.foreach(println)
+//    	b.foreach {println}
   	}
   	 
   	 

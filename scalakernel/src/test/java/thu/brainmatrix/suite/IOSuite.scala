@@ -40,17 +40,7 @@ class IOSuite extends FunSuite with BeforeAndAfterAll{
   
   
     test("mnist dataset") {
-        val batchSize = 100
-        val trainDataIter = IO.MNISTIter(scala.collection.immutable.Map(
-          "path_imgrec" -> "data/cifar10_val.rec",
-          "label_width" -> "1",
-          "data_shape" -> "(3,28,28)",
-          "shuffle" -> "1",
-          "batch_size" -> batchSize.toString))
-        
-        val data = takeIterElemt(trainDataIter,30).data.head
-        println(NDArray.max(data))  
-        CVTool.saveFlattenImage(data*255, "cifar.jpg")
+       
 
     }
     

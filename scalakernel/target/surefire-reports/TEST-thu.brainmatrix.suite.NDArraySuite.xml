@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <testsuite 
-errors="0" failures="0" hostname="agen-pc" name="Toy_sofrmaxSuite" tests="3" time="1.063" timestamp="2017-02-09T17:22:23">
+errors="0" failures="0" hostname="agen-pc" name="thu.brainmatrix.suite.NDArraySuite" tests="23" time="0.047" timestamp="2017-02-09T17:23:10">
   <properties>
     <property name="java.runtime.name" value="OpenJDK Runtime Environment">
     </property>
@@ -91,12 +91,74 @@ errors="0" failures="0" hostname="agen-pc" name="Toy_sofrmaxSuite" tests="3" tim
     <property name="sun.cpu.isalist" value=""> </property>
   </properties>
   <testcase 
-  name="dataIter_:dispose()" classname="Toy_sofrmaxSuite" time="0.031">
+  name="NDArray.concatenate" classname="thu.brainmatrix.suite.NDArraySuite" time="0.0">
 </testcase>
-  <testcase name="testData" classname="Toy_sofrmaxSuite" time="0.805">
-  </testcase>
-  <testcase name="testData_nce" classname="Toy_sofrmaxSuite" time="0.226">
-  </testcase>
+  <testcase 
+  name="NDArray.argmaxChannel" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="NDArray.array" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="Normalize" classname="thu.brainmatrix.suite.NDArraySuite" time="0.0">
+</testcase>
+  <testcase 
+  name="Random-uniform" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="one-hot" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="one-hot-bigger" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="run gpu" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="copy" classname="thu.brainmatrix.suite.NDArraySuite" time="0.0">
+</testcase>
+  <testcase 
+  name="arithmetic assosiation" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="integate_lxg" classname="thu.brainmatrix.suite.NDArraySuite" time="0.0">
+</testcase>
+  <testcase 
+  name="setslice_lxg" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="dot0" classname="thu.brainmatrix.suite.NDArraySuite" time="0.005">
+</testcase>
+  <testcase 
+  name="transpose" classname="thu.brainmatrix.suite.NDArraySuite" time="0.003">
+</testcase>
+  <testcase 
+  name="reshape" classname="thu.brainmatrix.suite.NDArraySuite" time="0.002">
+</testcase>
+  <testcase 
+  name="+" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="toarray" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="toString" classname="thu.brainmatrix.suite.NDArraySuite" time="0.0">
+</testcase>
+  <testcase 
+  name="load2map" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="save NDArray" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
+  <testcase 
+  name="slice" classname="thu.brainmatrix.suite.NDArraySuite" time="0.0">
+</testcase>
+  <testcase 
+  name="copyto" classname="thu.brainmatrix.suite.NDArraySuite" time="0.0">
+</testcase>
+  <testcase 
+  name="argmaxChannelTest" classname="thu.brainmatrix.suite.NDArraySuite" time="0.001">
+</testcase>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

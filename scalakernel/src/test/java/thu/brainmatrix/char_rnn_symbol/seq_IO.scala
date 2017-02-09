@@ -26,7 +26,7 @@ object seq_IO {
         val vocabfile = new File(vocabFileName)
         var vocab_final = Map[Char,Int]() 
         if(vocabfile.isFile()){
-            println(s"INFO:Using $vocabFileName,while vocabulary already exists")
+//            println(s"INFO:Using $vocabFileName,while vocabulary already exists")
             val source  = Source.fromFile(vocabfile)
             val line = source.mkString
             (line.zipWithIndex).map(x=>{
@@ -78,9 +78,9 @@ object seq_IO {
         val NDA_train = NDArray.array(array_train, Shape(num_seq_len,seq_len),ctx)
         val NDA_label = NDArray.array(array_label,Shape(num_seq_len,seq_len),ctx)
         val dataIter = new NDArrayLSTMIter(IndexedSeq(NDA_train),"data",IndexedSeq(NDA_label),labelName, batch_size, false, "discard")//the rest will discard
-        println(s"length:${dataIter}")
-        println(s"provideData:${dataIter.provideData}")//(32,24)
-            println(s"provideData:${dataIter.provideLabel}")//(32,24)
+//        println(s"length:${dataIter}")
+//        println(s"provideData:${dataIter.provideData}")//(32,24)
+//            println(s"provideData:${dataIter.provideLabel}")//(32,24)
         dataIter
     }
     
@@ -108,7 +108,7 @@ object seq_IO {
 //        val NDA_train = NDArray.array(array_train, Shape(num_seq_len,seq_len),ctx)
 //        val NDA_label = NDArray.array(array_label,Shape(num_seq_len,seq_len),ctx)
         val dataIter = new NDArrayLSTMIter(map_train.map(NDArray.array(_,Shape(num_seq,1))).toIndexedSeq,inputName,map_label.map(NDArray.array(_,Shape(num_seq))).toIndexedSeq,labelName, batch_size, false, "discard")//the rest will discard
-        println(s"provideData:${dataIter.provideLabel}")//(32,24)
+//        println(s"provideData:${dataIter.provideLabel}")//(32,24)
         dataIter
     }
     
@@ -200,8 +200,8 @@ object seq_IO {
     def main(args:Array[String]){
         //test build_vocabulary
         val vocab = build_vocabulary("./seqData/input.txt","./seqData/vocab.txt")
-        vocab.foreach(println)
-        println(vocab.values)
+//        vocab.foreach(println)
+//        println(vocab.values)
         
     }
 }

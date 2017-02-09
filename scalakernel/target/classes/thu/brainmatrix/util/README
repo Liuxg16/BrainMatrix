@@ -1,6 +1,0 @@
-The most global functions is build here.
-
-CodeTrick.scala: some special and important expressions are listed here to be referred.
-mathTool.scala: the static global functions about math operations
-IOHelper.scala: the static global IO functions are listed here.
- 

@@ -243,13 +243,13 @@ class NDArraySuite extends FunSuite with BeforeAndAfterAll {
 	 * 
 	 */
 	test("setslice_lxg"){
-		val ctx = Context.gpu(0)
-		val nda1 = NDArray.ones(ctx, 9,14) * 10
-	  	val nda2 = NDArray.ones(ctx, 9, 1)
+//		val ctx = Context.gpu(0)
+//		val nda1 = NDArray.ones(ctx, 9,14) * 10
+//	  	val nda2 = NDArray.ones(ctx, 9, 1)
 //	    println(nda1)
 //	    println(nda2)
 	  	
-	     NDArray.setColumnSlice(nda1,nda2,0)
+//	     NDArray.setColumnSlice(nda1,nda2,0)
 //	     println(nda1)
 //	     println(nda2)
 	}
@@ -296,13 +296,13 @@ class NDArraySuite extends FunSuite with BeforeAndAfterAll {
 	test("toString"){
 		val av = NDArray.ones(Shape(2,3,4))
 		av(1,1,1) =2
-		println(av)
+//		println(av)
 		
 	}
 	
 	
     test("load2map"){
-		val pretrained = NDArray.load2Map("./model/charLSTM.params_6")
+//		val pretrained = NDArray.load2Map("./model/charLSTM.params_6")
 //    	println(pretrained.head)
   	}
   
@@ -319,9 +319,9 @@ class NDArraySuite extends FunSuite with BeforeAndAfterAll {
   	}
   	
   	test("copyto"){
-  		val ctx = Context.gpu(0)
-  		val ind = NDArray.ones(Shape(4,3),ctx)
-  		val ind2 = NDArray.zeros(Shape(4,3))
+//  		val ctx = Context.gpu(0)
+//  		val ind = NDArray.ones(Shape(4,3),ctx)
+//  		val ind2 = NDArray.zeros(Shape(4,3))
   		
 //  		println(ind.copyTo(ctx))
   	}

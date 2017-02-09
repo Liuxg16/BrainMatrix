@@ -70,7 +70,7 @@ object ButketIo {
 
     private val content = readContent(path)
     private val sentences = content.split(seperateChar)
-    println(sentences.length)
+    // println(sentences.length)
 
     if (buckets.length == 0) {
       buckets = defaultGenBuckets(sentences, batchSize, vocab)
@@ -103,10 +103,10 @@ object ButketIo {
     // Get the size of each bucket, so that we could sample
     // uniformly from the bucket
     private val bucketSizes = data.map(_.length)
-    println("Summary of dataset ==================")
-    buckets.zip(bucketSizes).foreach {
-      case (bkt, size) => println(s"bucket of len $bkt : $size samples")
-    }
+    // println("Summary of dataset ==================")
+    // buckets.zip(bucketSizes).foreach {
+    //   case (bkt, size) => println(s"bucket of len $bkt : $size samples")
+    // }
 
      // make a random data iteration plan
      // truncate each bucket into multiple of batch-size

@@ -252,7 +252,7 @@ object Lstm {
         val lstm = Lstm.LSTMNet(LSTM_N_LAYER, SEQ_LENGTH, DIM_HIDDEN, DIM_EMBED, 87, DROPOUT)
         lstm.listArguments().foreach(println)
         val (a,b,_) = lstm.inferShape(input_shape)
-        println("************************")
+        println("**********LSTM**************")
 //        b.foreach {println}
 //        var data_i = Symbol.CreateVariable(s"data_1")
 //        var label_i = Symbol.CreateVariable(s"label_1")
