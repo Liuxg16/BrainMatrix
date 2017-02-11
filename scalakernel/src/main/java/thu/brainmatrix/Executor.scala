@@ -394,7 +394,7 @@ class DataParallelExecutorManager(symbol: Symbol,
                                   logger: Logger = DataParallelExecutorManager.logger) {
   // preparation
   private val numDevice = ctx.length
-  println(s"Start training with [${ctx.mkString(",")}]")
+  println(s"${Base.INFO} Start training with [${ctx.mkString(",")}]")
 
   // make sure the architecture is valid
   Executor.checkArguments(symbol)
@@ -413,7 +413,7 @@ class DataParallelExecutorManager(symbol: Symbol,
           (name, Shape(slices(i)._2 - slices(i)._1) ++ shape.drop(1))
         }
       
-      println(dataShapes)
+//      println(dataShapes)
       symbol.simpleBind(context, "write", shapeDict = dataShapes)
     }
   

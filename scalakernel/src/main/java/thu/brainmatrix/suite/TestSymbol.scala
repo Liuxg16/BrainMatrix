@@ -9,7 +9,7 @@
 //import ml.dmlc.mxnet.Executor
 //
 //
-//object TestSymbol{
+object TestSymbol{
 //    
 //    
 //	def main(args:Array[String]){
@@ -232,4 +232,4 @@
 //    println(lat.debugStr)
 //  }
 //  
-//}
+}

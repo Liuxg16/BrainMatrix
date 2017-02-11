@@ -1,6 +1,9 @@
-package thu.brainmatrix.cnn
+
 
 //import thu.brainmatrix.optimizer.SGD
+
+package thu.brainmatrix.cnn
+
 import scala.collection.mutable.ListBuffer
 import thu.brainmatrix.Context
 import thu.brainmatrix.NDArray
@@ -13,7 +16,7 @@ import thu.brainmatrix.FeedForward
  * by liuxiangen
  * 2016-4-5
  */
-object TestTraininglxg {
+object TestTraining_gpu {
   
   def main(args:Array[String]){
   	/**
@@ -73,7 +76,7 @@ object TestTraininglxg {
  
     val numEpoch = epochs
   
-    val modelBase = new FeedForward(softmax,Context.cpu(), numEpoch = numEpoch,
+    val modelBase = new FeedForward(softmax,Context.gpu(), numEpoch = numEpoch,
       optimizer = new SGD(learningRate = lr, momentum = mom, wd = wdd))
     
     val trainDataIter = IO.MNISTIter(scala.collection.immutable.Map(
@@ -169,21 +172,21 @@ object TestTraininglxg {
    
     def Training_mlp{
     	
-	  	val batchSize = 100
-	    val data = Symbol.CreateVariable("data")
-// 		val flatten = Symbol.Flatten(Map("data" -> data, "name" -> "flatten"))
- 		val fc1 = Symbol.FullyConnected()(Map("data" -> data, "name" -> "fc1", "num_hidden" -> 128))
- 		
-	    val act1 = Symbol.Activation()(Map("data" -> fc1, "name" -> "relu1", "act_type" -> "relu"))
-	    
-	    val fc2 = Symbol.FullyConnected()(Map("data" -> act1, "name" -> "fc2", "num_hidden" -> 64))
- 		val act2 = Symbol.Activation()(Map("data" -> fc2, "name" -> "relu2", "act_type" -> "relu"))
- 		val fc3 = Symbol.FullyConnected()(Map("data" -> act2, "name" -> "fc3", "num_hidden" -> 10))
- 		val sm = Symbol.SoftmaxOutput("sm")(Map("data" -> fc3))
+  	  	val batchSize = 100
+  	    val data = Symbol.CreateVariable("data")
+  // 		val flatten = Symbol.Flatten(Map("data" -> data, "name" -> "flatten"))
+   		  val fc1 = Symbol.FullyConnected()(Map("data" -> data, "name" -> "fc1", "num_hidden" -> 128))
+   		
+  	    val act1 = Symbol.Activation()(Map("data" -> fc1, "name" -> "relu1", "act_type" -> "relu"))
+  	    
+  	    val fc2 = Symbol.FullyConnected()(Map("data" -> act1, "name" -> "fc2", "num_hidden" -> 64))
+     		val act2 = Symbol.Activation()(Map("data" -> fc2, "name" -> "relu2", "act_type" -> "relu"))
+     		val fc3 = Symbol.FullyConnected()(Map("data" -> act2, "name" -> "fc3", "num_hidden" -> 10))
+     		val sm = Symbol.SoftmaxOutput("sm")(Map("data" -> fc3))
  		
 
-	    val numEpoch = 5
-	    val model = new FeedForward(sm, Context.cpu(), numEpoch = numEpoch,
+	    val numEpoch = 50
+	    val model = new FeedForward(sm, Context.gpu(), numEpoch = numEpoch,
 	      optimizer = new SGD(learningRate = 0.1f, momentum = 0.9f, wd = 0.0001f))
 	
 	    // get data

@@ -5,12 +5,12 @@
 //import thu.brainmatrix.Base._
 //
 //
-//object ModelParallel {
+object ModelParallel {
 //  
 //	def main(args:Array[String]){
 //		testChain
 ////		testChain_simple
-//	}
+	}
 //	
 //
 //	def testChain {

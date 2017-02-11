@@ -287,7 +287,7 @@ class FeedForward(val symbol: Symbol, val ctx: Array[Context] = Array(Context.cp
     this.optimizer.setArgNames(argNames)
     this.optimizer.setRescaleGrad(1f / batchSize)
 
-    println("Start training on multi-device")
+    println(s"${Base.INFO} Start training on multi-device")
     Model.trainMultiDevice(
       symbol, ctx, argNames, paramNames, auxNames,
       _argParams, _auxParams,

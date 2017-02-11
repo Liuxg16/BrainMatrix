@@ -1,4 +1,6 @@
 
+package thu.brainmatrix.suite
+
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import thu.brainmatrix.nce_loss.DataIter_
 import thu.brainmatrix.nce_loss.DataIter_nce

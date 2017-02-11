@@ -1,7 +1,7 @@
 //package thu.brainmatrix.utilSuite
 //
 //
-//import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 //import org.opencv.core.Core
 //import org.opencv.highgui.Highgui
 //import org.opencv.imgproc.Imgproc
@@ -13,7 +13,7 @@
 //import scala.collection.mutable.ArrayBuffer
 //
 //
-//class OpencvSuite extends FunSuite with BeforeAndAfterAll{
+class OpencvSuite extends FunSuite with BeforeAndAfterAll{
 //
 //	
 //	test("opencv test"){
@@ -49,4 +49,4 @@
 //	
 //	
 //	
-//}
+}

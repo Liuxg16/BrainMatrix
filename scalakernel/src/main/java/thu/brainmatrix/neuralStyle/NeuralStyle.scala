@@ -23,7 +23,7 @@ object NeuralStyle {
 
   def preprocessContentImage(path: String, longEdge: Int, ctx: Context): NDArray = {
     val img = Image(new File(path))
-    println(s"load the content image, size = ${(img.height, img.width)}")
+    println(s"$Base.INFO load the content image, size = ${(img.height, img.width)}")
     val factor = longEdge.toFloat / Math.max(img.height, img.width)
     val (newHeight, newWidth) = ((img.height * factor).toInt, (img.width * factor).toInt)
     val resizedImg = img.scaleTo(newWidth, newHeight)

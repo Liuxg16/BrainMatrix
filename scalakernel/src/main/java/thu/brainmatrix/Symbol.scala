@@ -31,6 +31,11 @@ class Symbol private(private[brainmatrix] val handle: SymbolHandle) {
 	//global variable for symbol graph
 	var heads_ : Vector[DataEntry] = Vector()
 	var staticGraph = new StaticGraph()
+	
+	def setStaticGraph(sg:StaticGraph){
+	  this.staticGraph = sg
+	}
+	
   /**
    * Release the native memory.
    * The object shall never be used after it is disposed.
@@ -232,7 +237,6 @@ class Symbol private(private[brainmatrix] val handle: SymbolHandle) {
 	    val s = new Symbol((new SymbolHandleRef).value)
 	    s.heads_ :+= this.heads_(index)
 	    s
-	    
 	}
 	
 	
@@ -2443,6 +2447,9 @@ object Symbol {
     new Symbol(handle.value)
   }
 
+  
+  
+  
   /**
    * Load symbol from json string.
    * @param json A json string.
@@ -2453,6 +2460,24 @@ object Symbol {
     val handle = new SymbolHandleRef
     checkCall(_LIB.mxSymbolCreateFromJSON(json, handle))
     new Symbol(handle.value)
+  }
+  
+  
+  /**
+   * author: yangxiaoer
+   * 2017-2-10
+   *   
+   */
+  
+  def loadSymFormFile(fname:String): Symbol = {
+    val handleRef = new StaticGraphHandleRef
+    checkCall(_LIB.mxScalaSymbolCreateFromFile(fname, handleRef))
+    val sg = new StaticGraph()
+    sg.handle = handleRef.value
+    val symHandle = new SymbolHandleRef
+    val s  =new Symbol(symHandle.value)
+    s.staticGraph = sg
+    s
   }
 }
 

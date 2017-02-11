@@ -1,9 +1,6 @@
-
-
-//import thu.brainmatrix.optimizer.SGD
-
 package thu.brainmatrix.cnn
 
+//import thu.brainmatrix.optimizer.SGD
 import scala.collection.mutable.ListBuffer
 import thu.brainmatrix.Context
 import thu.brainmatrix.NDArray
@@ -12,11 +9,16 @@ import thu.brainmatrix.IO
 import thu.brainmatrix.Context.ctx2Array
 import thu.brainmatrix.Symbol
 import thu.brainmatrix.FeedForward
+
+import thu.brainmatrix.util.CVTool
+
+
+
 /**
  * by liuxiangen
  * 2016-4-5
  */
-object TestTraining_gpu {
+object TestTraininglxg {
   
   def main(args:Array[String]){
   	/**
@@ -35,10 +37,42 @@ object TestTraining_gpu {
 //  			
 //  	})
   	
-//  	train_lenet(0.1f,0.9f,0.0001f,1)
+  	train_lenet(0.1f,0.9f,0.0001f,1)
   	
-  	Training_mlp
+//  	Training_mlp
   	
+  }
+  
+  
+  
+  def getLenet() :Symbol = {
+    val data = Symbol.CreateVariable("data")
+    val conv1 = Symbol.Convolution()(Map("data" -> data, "name" -> "conv1",
+                                       "num_filter" -> 20, "kernel" -> (5, 5)/*, "stride" -> (2, 2)*/))
+
+    val act1 = Symbol.Activation()(Map("data" -> conv1, "name" -> "tanh1", "act_type" -> "tanh"))                       
+    val mp1 = Symbol.Pooling()(Map("data" -> act1, "name" -> "mp1",
+                                 "kernel" -> (2, 2), "stride" -> (2, 2), "pool_type" -> "max"))
+                                 
+    //second conv
+    val conv2 = Symbol.Convolution()(Map("data" -> mp1, "name" -> "conv2", "num_filter" -> 50,
+                                       "kernel" -> (5, 5), "stride" -> (2, 2)))
+    val act2 = Symbol.Activation()(Map("data" -> conv2, "name" -> "tanh2", "act_type" -> "tanh"))
+    val mp2 = Symbol.Pooling()(Map("data" -> act2, "name" -> "mp2",
+                                 "kernel" -> (2, 2), "stride" -> (2, 2), "pool_type" -> "max"))
+                              
+    //first fullc
+    val fl = Symbol.Flatten()(Map("data" -> mp2, "name" -> "flatten"))
+    val fc1 = Symbol.FullyConnected()(Map("data" -> fl, "name" -> "fc1", "num_hidden" -> 500))
+    val act3 = Symbol.Activation()(Map("data" -> fc1, "name" -> "tanh3", "act_type" -> "tanh"))
+    
+    //second fullc
+    val fc2 = Symbol.FullyConnected()(Map("data" -> act3, "name" -> "fc2", "num_hidden" -> 10))
+    
+    //loss
+    val softmax = Symbol.SoftmaxOutput("sm")(Map("data" -> fc2 ))
+    
+    softmax
   }
   
   
@@ -72,11 +106,11 @@ object TestTraining_gpu {
     val fc2 = Symbol.FullyConnected()(Map("data" -> act3, "name" -> "fc2", "num_hidden" -> 10))
     
     //loss
-    val softmax = Symbol.SoftmaxOutput()(Map("data" -> fc2, "name" -> "sm"))
+    val softmax = Symbol.SoftmaxOutput("sm")(Map("data" -> fc2 ))
  
     val numEpoch = epochs
   
-    val modelBase = new FeedForward(softmax,Context.gpu(), numEpoch = numEpoch,
+    val modelBase = new FeedForward(softmax,Context.cpu(), numEpoch = numEpoch,
       optimizer = new SGD(learningRate = lr, momentum = mom, wd = wdd))
     
     val trainDataIter = IO.MNISTIter(scala.collection.immutable.Map(
@@ -99,11 +133,17 @@ object TestTraining_gpu {
       "shuffle" -> "1",
       "flat" -> "0", "silent" -> "0"))
     
-
+    CVTool.saveFlattenImage(trainDataIter.getData()(0).copy(),"data/mnist.jpg")
     
     modelBase.fit(trainData = trainDataIter,evalData = valDataIter)
     println("Finish fit ...")
 
+     //save model
+	    val prefix = "lenet"
+	    
+	    modelBase.save(prefix, 10)
+    
+    
     val probArrays = modelBase.predict(data = valDataIter)
   
     val prob = probArrays(0)
@@ -112,10 +152,13 @@ object TestTraining_gpu {
     valDataIter.reset()
     val labels = ListBuffer.empty[NDArray]
     var evalData = valDataIter.next()
-    while (evalData != null) {
-      labels += evalData.label(0).copy()
-      evalData = valDataIter.next()
-    }
+    
+     while (valDataIter.hasNext) {
+	      var evalData = valDataIter.next()
+	      labels += evalData.label(0).copy()
+	    }
+    
+   
     val y = NDArray.concatenate(labels)
 
     val py = NDArray.argmaxChannel(prob)
@@ -185,8 +228,8 @@ object TestTraining_gpu {
  		val sm = Symbol.SoftmaxOutput("sm")(Map("data" -> fc3))
  		
 
-	    val numEpoch = 50
-	    val model = new FeedForward(sm, Context.gpu(), numEpoch = numEpoch,
+	    val numEpoch = 10
+	    val model = new FeedForward(sm, Context.cpu(), numEpoch = numEpoch,
 	      optimizer = new SGD(learningRate = 0.1f, momentum = 0.9f, wd = 0.0001f))
 	
 	    // get data
@@ -201,7 +244,7 @@ object TestTraining_gpu {
 	      "flat" -> "1",
 	      "silent" -> "0",
 	      "seed" -> "10"))
-	    println(trainDataIter.provideLabel)
+	    
 	    
 	    val valDataIter = IO.MNISTIter(scala.collection.immutable.Map(
 	      "image" -> "data/t10k-images-idx3-ubyte",
@@ -213,6 +256,9 @@ object TestTraining_gpu {
 	      "flat" -> "1", "silent" -> "0"))
 	    model.fit(trainDataIter, valDataIter)
 	    println("Finish fit ...")
+	    
+	   
+	    
 	    val probArrays = model.predict(valDataIter)
 	    val prob = probArrays(0)
 	    println("Finish predict ...")

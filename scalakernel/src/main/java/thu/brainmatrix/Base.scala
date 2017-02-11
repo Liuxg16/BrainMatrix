@@ -6,6 +6,8 @@ import org.slf4j.{LoggerFactory, Logger}
 object Base {
 	
 	def welcome = println("--------------Hello From Lemonman.net !-----------------")
+	final val INFO =  "[BRAINMATRIX::INFO]  "
+	
 	
 	private val logger: Logger = LoggerFactory.getLogger("MXNetJVM")
 

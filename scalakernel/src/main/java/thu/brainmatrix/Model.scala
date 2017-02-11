@@ -32,7 +32,7 @@ object Model {
       auxParams.map { case (k, v) => s"aux:$k" -> v }
     val paramName = "%s-%04d.params".format(prefix, epoch)
     NDArray.save(paramName, saveDict)
-    println(s"Saved checkpoint to $paramName")
+    println(s"${Base.INFO}:    Saved checkpoint to $paramName")
   }
 
   /**
@@ -67,6 +67,34 @@ object Model {
     }
     (symbol, argParams.toMap, auxParams.toMap)
   }
+  
+  /**
+   * improved function
+   * author: yangxiaoer
+   * wrong!!!!
+   * 
+   */
+  def loadCheckpoint_imp(prefix: String, epoch: Int):
+    (Symbol, Map[String, NDArray], Map[String, NDArray]) = {
+    val symbol = Symbol.loadSymFormFile(s"$prefix-symbol.json")
+    val saveDict = NDArray.load("%s-%04d.params".format(prefix, epoch))
+    val argParams = mutable.HashMap[String, NDArray]()
+    val auxParams = mutable.HashMap[String, NDArray]()
+    for ((k, v) <- saveDict._1 zip saveDict._2) {
+      val splitted = k.split(":", 2)
+      val tp = splitted(0)
+      val name = splitted(1)
+      if (tp == "arg") {
+        argParams(name) = v
+      } else if (tp == "aux") {
+        auxParams(name) = v
+      }
+    }
+    (symbol, argParams.toMap, auxParams.toMap)
+  }
+  
+  
+  
 
   // a helper class for serializing model
   class SerializedModel private[brainmatrix] (
@@ -291,7 +319,7 @@ object Model {
           monitor.foreach(_.tocPrint())
           // evaluate at end, so out_cpu_array can lazy copy
           evalMetric.update(dataBatch.label, executorManager.cpuOutputArrays)
-		  nBatch += 1
+		      nBatch += 1
           
           batchEndCallback.foreach(_.invoke(epoch, nBatch, evalMetric))
 		  
@@ -310,9 +338,9 @@ object Model {
       }
 
       val (name, value) = evalMetric.get
-      println(s"Epoch[$epoch] Train-$name=$value")
+      println(s"${Base.INFO} Epoch[$epoch] Train-$name=$value")
       val toc = System.currentTimeMillis
-      println(s"Epoch[$epoch] Time cost=${toc - tic}")
+      println(s"${Base.INFO} Epoch[$epoch] Time cost=${toc - tic}")
 
       evalData.foreach { evalDataIter =>
         evalMetric.reset()
