@@ -2,7 +2,6 @@
 package thu.brainmatrix.char_rnn_symbol
 
 import thu.brainmatrix.char_rnn_symbol.Config._
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import scala.io.Source
 import thu.brainmatrix.FeedForward
 import thu.brainmatrix.Symbol
@@ -13,9 +12,10 @@ import thu.brainmatrix.NDArray
 import thu.brainmatrix.Context.ctx2Array
 import thu.brainmatrix.char_rnn_symbol.seq_IO
 
-class lstmSuite extends FunSuite with BeforeAndAfterAll  {
+class lstmSuite  {
 	
-  	test("mlp proccess text data"){
+//  	test("mlp proccess text data"){
+  def testmlpprocess{
         val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
         val n_alphabet = vocab.size
 //      val lstm = Lstm.LSTM(LSTM_N_LAYER, SEQ_LENGTH, DIM_HIDDEN, DIM_EMBED, n_alphabet, DROPOUT)
@@ -43,7 +43,8 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
 //        modelBase.fit(traindata, traindata,new ReconsAccuracy())
   }
   
-  	test("vocab reverse"){
+//  	test("vocab reverse"){
+  def testvocab{
 		val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
 	  	var bacov = for((k,v)<- vocab) yield (v,k)
 	  	bacov = bacov.updated(5, '?')
@@ -51,7 +52,8 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
 //	  	println(bacov)
   }
   
-  	test("data&label"){
+//  	test("data&label"){
+  def testdataandlabel{
 	  	val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
 	    var bacov = for((k,v)<- vocab) yield (v,k)
   	  bacov = bacov.updated(bacov.size-1, '?')
@@ -77,7 +79,8 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
       }
    }
   
-  	test("lstm_vec_DataIter"){
+//  	test("lstm_vec_DataIter"){
+  def testlstmvecdataiter{
   	  val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
 	    var bacov = for((k,v)<- vocab) yield (v,k)
   	  bacov = bacov.updated(bacov.size-1, '?')
@@ -110,7 +113,8 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
       }
     }
   	
-  	test("RNN_OneHot_DataIter"){
+//  	test("RNN_OneHot_DataIter"){
+  def testrnnonehot{
   	  val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
 	    var bacov = for((k,v)<- vocab) yield (v,k)
   	  bacov = bacov.updated(bacov.size-1, '?')
@@ -150,7 +154,8 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
   	
   	
   	
-  	test("2layer-lstm") {
+//  	test("2layer-lstm") {
+  def test2layerlstm{
   		
   		  val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
         val n_alphabet = vocab.size
@@ -182,7 +187,8 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
   	}
   	
   	
-  	test("1 layer-lstm") {
+//  	test("1 layer-lstm") {
+  def test1layerlstm{
   		
   		val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
       val n_alphabet = vocab.size
@@ -216,7 +222,8 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
   	}
   	
   
-  	test("inspect file"){
+//  	test("inspect file"){
+  def testinspect{
   		val source  = Source.fromFile(INPUT_FILE_NAME) 
   		val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
 	    val seq_input = source.mkString.map(vocab)
@@ -224,13 +231,15 @@ class lstmSuite extends FunSuite with BeforeAndAfterAll  {
   	}
   	
   	
-  	test("check params"){
+//  	test("check params"){
+  def checkparams{
 //  		val pretrained = NDArray.load2Map(s"./model/charLSTM.params_${N_EPOCH}")
 //    	println(pretrained.keys)
 //    	println(pretrained("argParams::_pred_0_weight"))
   	}
   	
-  	 test("debugTraining"){
+//  	 test("debugTraining"){
+  def debugtrain{
 			
 	  	val vocab = seq_IO.build_vocabulary(INPUT_FILE_NAME, VOCAB_FILE_NAME)  
       	val n_alphabet = vocab.size

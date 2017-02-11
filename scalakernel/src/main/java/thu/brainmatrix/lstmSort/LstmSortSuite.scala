@@ -1,11 +1,11 @@
 
 package thu.brainmatrix.lstmSort
 
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import thu.brainmatrix.util.IOHelper
 import thu.brainmatrix.lstmSort.ButketIo
-class LstmSortSuite extends FunSuite with BeforeAndAfterAll {
-  	test("test"){
+class LstmSortSuite {
+//  	test("test"){
+  def testTest{
   		val path_train = "./data/sort.train.txt"
 		  val path_test = "./data/sort.valid.txt"
 	    val batch_size = 100
