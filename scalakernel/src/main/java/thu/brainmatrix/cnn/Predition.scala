@@ -59,8 +59,7 @@ object Predition {
       index
     }
     
-    
     def main(args:Array[String]){
-      println(pred("/home/agen/workspace-python/flask/digit-recognizer-flask-cnn/output.png"))
+      println(pred("/home/agen/workspace-python/flask/recognizer/output.png"))
     }
 }

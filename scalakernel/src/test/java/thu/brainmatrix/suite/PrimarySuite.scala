@@ -10,7 +10,8 @@ class PrimarySuite extends FunSuite with BeforeAndAfterAll{
 	
 	
 	
-	test("plot"){
+//	test("plot"){
+  def testplot{
 		val f = Figure()
 		val p = f.subplot(0)
 		val x = linspace(0.0,1.0)
@@ -21,7 +22,8 @@ class PrimarySuite extends FunSuite with BeforeAndAfterAll{
 //		f.saveas("lines.png") // save current figure as a .png, eps and pdf also supported
 	}
 	
-	test("plot1"){
+//	test("plot1"){
+  def testplot1{
 		val f = Figure()
 		val p = f.subplot(0)
 		val x = linspace(0.0,1.0)
